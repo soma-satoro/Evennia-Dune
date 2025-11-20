@@ -1,0 +1,223 @@
+# House System Test Script
+# Copy and paste these commands in-game to test the House system
+# NOTE: You must have Builder+ permission to run most of these commands
+
+# ========================================
+# TEST 1: Create House Molay (from rulebook example)
+# ========================================
+
++housecreate Molay=House Minor
+
+# Verify creation
++house/list
++house Molay
+
+# ========================================
+# TEST 2: Set basic properties
+# ========================================
+
++houseset Molay/banner=White,Red
++houseset Molay/crest=Scroll
++houseset Molay/trait=Secretive
+
+# Verify
++house Molay
+
+# ========================================
+# TEST 3: Set homeworld details
+# ========================================
+
++houseset Molay/homeworld=Molay Prime
++houseset Molay/desc=A string of large islands with varied terrain that inspire the greatest poets in the Imperium. The main city sits on a dramatic coastal cliff, while secret training facilities are hidden in remote fishing villages.
++houseset Molay/weather=Temperate maritime climate with dramatic seasonal storms
++houseset Molay/habitation=Sparsely populated fishing villages and one main coastal town
++houseset Molay/crime=Low crime rate, strictly but fairly enforced
++houseset Molay/populace=Generally content and proud of their artistic heritage
++houseset Molay/wealth=Moderate investment in public works supporting the arts and culture
+
+# Verify
++house Molay
+
+# ========================================
+# TEST 4: Add domains
+# ========================================
+
+# Check available areas
++housedomain Molay/areas
+
+# Add primary domain (Artistic)
++housedomain Molay/add primary=Artistic:Produce:Poetry - the most incredible verses in the universe
+
+# Add secondary domain (Kanly)
++housedomain Molay/add secondary=Kanly:Workers:Assassins trained in hidden poetry schools
+
+# List domains
++housedomain Molay/list
+
+# Verify (should show Artistic trait was auto-added)
++house Molay
+
+# ========================================
+# TEST 5: Set House roles
+# ========================================
+
+# List available roles
++houserole Molay/list
+
+# Set key roles
++houserole Molay/set Ruler=Lady Elara Molay:Wise patroness of the arts:Artistic,Honorable
++houserole Molay/set Heir=Lord Marcus Molay:Young poet and aspiring warrior
++houserole Molay/set Spymaster=The Verse Master:Master of the hidden assassin schools:Secretive,Deadly
++houserole Molay/set Swordmaster=Master Kaelen:Teaches both blade and verse
++houserole Molay/set Advisor=Scholar Tamrin:Advisor on arts and culture:Artistic,Wise
+
+# List filled roles
++houserole Molay/list
+
+# Verify
++house Molay
+
+# ========================================
+# TEST 6: Create enemy House Arcuri
+# ========================================
+
++housecreate Arcuri=House Minor
++houseset Arcuri/banner=Gold,Purple
++houseset Arcuri/crest=Holy Flame
++houseset Arcuri/trait=Puritanical
++houseset Arcuri/trait=Religious
++housedomain Arcuri/add primary=Religion:Expertise:Puritanical clergy
++housedomain Arcuri/add secondary=Political:Expertise:Religious diplomats
++houserole Arcuri/set Ruler=Patriarch Severus Arcuri:Stern religious leader:Religious,Judgmental
+
+# Verify
++house Arcuri
+
+# ========================================
+# TEST 7: Set up enemy relationship
+# ========================================
+
+# Add Arcuri as enemy of Molay
++houseenemy Molay/add=House Arcuri:Loathing:Morality
+
+# Add reciprocal enemy
++houseenemy Arcuri/add=House Molay:Loathing:Morality
+
+# List enemies
++houseenemy Molay/list
++houseenemy Arcuri/list
+
+# Verify
++house Molay
++house Arcuri
+
+# ========================================
+# TEST 8: Add House members (use real character names)
+# ========================================
+
+# Replace "TestCharacter" with an actual character name
+# +housemember Molay/add=TestCharacter
+# +housemember TestCharacter
+# +housemember Molay/list
+
+# ========================================
+# TEST 9: Test domain limits
+# ========================================
+
+# House Minor can have 1 primary, 1 secondary
+# Try to add another primary (should fail)
++housedomain Molay/add primary=Military:Expertise:Tacticians
+
+# Try to add another secondary (should fail)
++housedomain Molay/add secondary=Political:Produce:Information
+
+# ========================================
+# TEST 10: Test Great House (more domains)
+# ========================================
+
++housecreate Corrino=Great House
++houseset Corrino/banner=Gold,Red
++houseset Corrino/crest=Golden Lion
++houseset Corrino/trait=Imperial
+
+# Great House can have 2 primary, 3 secondary
++housedomain Corrino/add primary=Political:Produce:Imperial authority and decrees
++housedomain Corrino/add primary=Military:Expertise:Sardaukar - the Emperor's elite troops
++housedomain Corrino/add secondary=Espionage:Workers:Imperial spies throughout the Landsraad
++housedomain Corrino/add secondary=Industrial:Machinery:Imperial spacecraft and technology
++housedomain Corrino/add secondary=Religion:Expertise:Imperial religious advisors
+
+# Verify
++house Corrino
++housedomain Corrino/list
+
+# ========================================
+# TEST 11: List all Houses
+# ========================================
+
++house/list
+
+# ========================================
+# TEST 12: Test modifications
+# ========================================
+
+# Change House type
++houseset Molay/type=House Major
+
+# Verify threat level changed (should be 2 now)
++house Molay
+
+# Change back
++houseset Molay/type=House Minor
++house Molay
+
+# Remove a role
++houserole Molay/remove Advisor
++houserole Molay/list
+
+# Re-add it
++houserole Molay/set Advisor=Scholar Tamrin:Advisor on arts and culture
++houserole Molay/list
+
+# Remove an enemy
++houseenemy Molay/list
++houseenemy Molay/remove=1
++houseenemy Molay/list
+
+# Re-add it
++houseenemy Molay/add=House Arcuri:Loathing:Morality
++houseenemy Molay/list
+
+# ========================================
+# VERIFICATION CHECKLIST
+# ========================================
+
+# [ ] House Molay created with correct type
+# [ ] Banner colors and crest set
+# [ ] Homeworld details populated
+# [ ] Primary domain (Artistic) added
+# [ ] Secondary domain (Kanly) added
+# [ ] Artistic trait auto-added from primary domain
+# [ ] Secretive trait manually added
+# [ ] Multiple roles filled
+# [ ] House Arcuri created as enemy
+# [ ] Enemy relationship shows correct hatred level and reason
+# [ ] House list shows all created Houses
+# [ ] Domain limits enforced correctly
+# [ ] Great House (Corrino) has more domains
+# [ ] Full House display shows all information
+# [ ] Threat levels correct for each House type
+
+# ========================================
+# CLEANUP (if desired)
+# ========================================
+
+# To remove test Houses (use with caution):
+# @delete Molay
+# @delete Arcuri
+# @delete Corrino
+
+# ========================================
+# END OF TEST SCRIPT
+# ========================================
+
