@@ -1,0 +1,512 @@
+HOUSE LOCK FUNCTIONS - TEST PROCEDURES
+======================================
+
+This document provides test procedures for House-based lock functions on exits.
+
+PREREQUISITE SETUP
+==================
+
+Before testing locks, set up test environment:
+
+1. Create Test Houses
+   +house/create TestHouseA=House Minor
+   +house/create TestHouseB=House Minor
+   +house/create TestGreatHouse=Great House
+
+2. Create Test Characters (or use existing)
+   - Character in TestHouseA
+   - Character in TestHouseB
+   - Character with no House
+   - Character with Builder permission
+
+3. Assign Characters to Houses
+   +house/member TestHouseA/add=CharA
+   +house/member TestHouseB/add=CharB
+
+4. Create Test Room and Exits
+   @dig Test Chamber
+   @open north:test_north = Test Chamber
+   @open south:test_south = #<your current room number>
+
+
+TEST 1: house() - Specific House Only
+======================================
+
+Setup:
+@lock/traverse north = house(TestHouseA)
+@fail north = Only TestHouseA members may pass.
+
+Test Cases:
+1. CharA (TestHouseA member): north
+   Expected: SUCCESS - passes through
+
+2. CharB (TestHouseB member): north
+   Expected: BLOCKED - sees fail message
+
+3. CharC (no House): north
+   Expected: BLOCKED - sees fail message
+
+4. Builder character: north
+   Expected: BLOCKED (no staff bypass set)
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 2: hashouse() - Any House Member
+======================================
+
+Setup:
+@lock/traverse north = hashouse()
+@fail north = This area is for nobles only.
+
+Test Cases:
+1. CharA (TestHouseA): north
+   Expected: SUCCESS
+
+2. CharB (TestHouseB): north
+   Expected: SUCCESS
+
+3. CharC (no House): north
+   Expected: BLOCKED
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 3: nohouse() - No House Affiliation
+=========================================
+
+Setup:
+@lock/traverse north = nohouse()
+@fail north = Nobles are not welcome here.
+
+Test Cases:
+1. CharA (has House): north
+   Expected: BLOCKED
+
+2. CharB (has House): north
+   Expected: BLOCKED
+
+3. CharC (no House): north
+   Expected: SUCCESS
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 4: housetype() - Specific House Type
+==========================================
+
+Setup:
+@lock/traverse north = housetype(Great)
+@fail north = Only Great Houses may enter.
+
+Test Cases:
+1. CharA (House Minor): north
+   Expected: BLOCKED
+
+2. CharGreat (Great House member): north
+   Expected: SUCCESS
+
+3. Try variations:
+   @lock/traverse north = housetype(Great House)
+   - Should also work
+
+   @lock/traverse north = housetype(Minor)
+   - CharA should now pass
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 5: housemintype() - Minimum House Type
+============================================
+
+Setup:
+@lock/traverse north = housemintype(Minor)
+@fail north = Only established Houses may enter.
+
+Test Cases:
+1. Nascent House member: north
+   Expected: BLOCKED
+
+2. Minor House member: north
+   Expected: SUCCESS
+
+3. Major House member: north
+   Expected: SUCCESS
+
+4. Great House member: north
+   Expected: SUCCESS
+
+Change to Major minimum:
+@lock/traverse north = housemintype(Major)
+
+5. Minor House member: north
+   Expected: BLOCKED (doesn't meet minimum)
+
+6. Major/Great House member: north
+   Expected: SUCCESS
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 6: houseor() - Multiple Houses
+====================================
+
+Setup:
+@lock/traverse north = houseor(TestHouseA, TestHouseB)
+@fail north = This area is restricted to allied Houses.
+
+Test Cases:
+1. CharA (TestHouseA): north
+   Expected: SUCCESS
+
+2. CharB (TestHouseB): north
+   Expected: SUCCESS
+
+3. CharC (different House or no House): north
+   Expected: BLOCKED
+
+Test with full names:
+@lock/traverse north = houseor(House TestHouseA, House TestHouseB)
+
+4. Repeat tests - should still work
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 7: not_house() - Exclude Specific House
+=============================================
+
+Setup:
+@lock/traverse north = not_house(TestHouseB)
+@fail north = TestHouseB members are not allowed.
+
+Test Cases:
+1. CharA (TestHouseA): north
+   Expected: SUCCESS
+
+2. CharB (TestHouseB): north
+   Expected: BLOCKED
+
+3. CharC (no House): north
+   Expected: SUCCESS
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 8: houserole() - Specific Role
+====================================
+
+Setup:
+1. Set a role in TestHouseA:
+   +house/role TestHouseA/set Ruler=CharA
+
+2. Create lock:
+   @lock/traverse north = houserole(Ruler)
+   @fail north = Only House Rulers may enter.
+
+Test Cases:
+1. CharA (has Ruler role): north
+   Expected: SUCCESS
+
+2. CharB (no Ruler role): north
+   Expected: BLOCKED
+
+3. CharD (same House as CharA, no role): north
+   Expected: BLOCKED
+
+Cleanup:
+@lock/del/traverse north
++house/role TestHouseA/remove Ruler
+
+
+TEST 9: Combined Locks - AND
+=============================
+
+Setup:
+@lock/traverse north = house(TestHouseA) AND houserole(Ruler)
+@fail north = Restricted to House leadership.
+
+Prerequisites:
++house/role TestHouseA/set Ruler=CharA
+
+Test Cases:
+1. CharA (TestHouseA + Ruler): north
+   Expected: SUCCESS
+
+2. CharB (TestHouseA, no role): north
+   Expected: BLOCKED (has House, lacks role)
+
+3. CharC (different House + any role): north
+   Expected: BLOCKED (lacks House)
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 10: Combined Locks - OR
+=============================
+
+Setup:
+@lock/traverse north = house(TestHouseA) OR house(TestHouseB)
+@fail north = Only allied Houses may pass.
+
+Test Cases:
+1. CharA (TestHouseA): north
+   Expected: SUCCESS
+
+2. CharB (TestHouseB): north
+   Expected: SUCCESS
+
+3. CharC (different House): north
+   Expected: BLOCKED
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 11: Staff Bypass
+=====================
+
+Setup:
+@lock/traverse north = house(TestHouseA) OR perm(Builder)
+@fail north = Restricted area.
+
+Test Cases:
+1. CharA (TestHouseA): north
+   Expected: SUCCESS
+
+2. CharB (no access, not Builder): north
+   Expected: BLOCKED
+
+3. Builder character (any House or no House): north
+   Expected: SUCCESS (staff bypass)
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 12: Complex Lock
+=====================
+
+Setup:
+@lock/traverse north = (house(TestHouseA) OR house(TestHouseB)) AND NOT house(TestGreatHouse) OR perm(Builder)
+@fail north = Complex access restrictions apply.
+
+Test Cases:
+1. CharA (TestHouseA): north
+   Expected: SUCCESS
+
+2. CharB (TestHouseB): north
+   Expected: SUCCESS
+
+3. CharGreat (TestGreatHouse): north
+   Expected: BLOCKED by NOT clause
+
+4. Builder: north
+   Expected: SUCCESS (staff bypass)
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 13: Case Insensitivity
+============================
+
+Setup:
+@lock/traverse north = house(testhousea)
+
+Test Cases:
+1. CharA (TestHouseA - mixed case): north
+   Expected: SUCCESS (case-insensitive comparison)
+
+Try variations:
+@lock/traverse north = house(TESTHOUSEA)
+@lock/traverse north = house(TestHouseA)
+@lock/traverse north = house(testHOUSEa)
+
+All should work with TestHouseA members.
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 14: Lock with Custom Fail Messages
+========================================
+
+Setup:
+@lock/traverse north = house(TestHouseA)
+@fail north = |rThe guards cross their spears.|n "Only House TestHouseA may enter."
+@fail north = You hear a voice: "Turn back. This is not your place."
+
+Test Cases:
+1. CharB (TestHouseB) tries: north
+   Expected: See colorized, formatted fail message
+
+Test different fail messages:
+@fail north = A force field shimmers before you, barring entry.
+@fail north = The door is sealed with a House-specific lock.
+
+Cleanup:
+@lock/del/traverse north
+
+
+TEST 15: Debugging Locks
+=========================
+
+Commands to diagnose lock issues:
+
+1. View lock details:
+   @examine north
+
+2. Detailed lock info:
+   @examine/locks north
+
+3. Check character's house:
+   @py self.db.house
+   @py self.db.house.key if self.db.house else "No house"
+
+4. Check character's house type:
+   @py self.db.house.db.house_type if self.db.house else "No house"
+
+5. Check if character has a role:
+   @py self.db.house.db.roles if self.db.house else {}
+
+6. Test lock manually:
+   # From within Python console:
+   from server.conf import lockfuncs
+   lockfuncs.house(self, exit_obj, "TestHouseA")
+
+
+FULL SCENARIO TEST: House Palace Complex
+=========================================
+
+Setup: Create a complete palace with multiple security levels
+
+# Create rooms
+@dig Palace Entrance
+@dig Palace Hall
+@dig Private Wing
+@dig War Room
+@dig Treasury Vault
+@dig Throne Room
+
+# Create exits with appropriate locks
+@open gate = Palace Entrance
+@lock/traverse gate = house(TestHouseA) OR perm(Builder)
+@fail gate = Guards block your path. "House TestHouseA only."
+
+# From Palace Entrance
+@open hall = Palace Hall
+@lock/traverse hall = hashouse()
+@fail hall = This hall is for nobles only.
+
+# From Palace Hall
+@open private = Private Wing
+@lock/traverse private = house(TestHouseA)
+@fail private = This wing is restricted to House members.
+
+# From Private Wing
+@open warroom = War Room
+@lock/traverse warroom = house(TestHouseA) AND houserole(Warmaster)
+@fail warroom = Restricted to the Warmaster.
+
+@open vault = Treasury Vault
+@lock/traverse vault = houserole(Treasurer)
+@fail vault = Only the Treasurer may access the vault.
+
+@open throne = Throne Room
+@lock/traverse throne = houserole(Ruler) OR houserole(Consort)
+@fail throne = Only the Duke and Duchess may enter.
+
+# Setup roles
++house/role TestHouseA/set Ruler=CharA
++house/role TestHouseA/set Warmaster=CharD
++house/role TestHouseA/set Treasurer=CharE
+
+Test Progression:
+1. CharA (Ruler) should reach: Gate → Hall → Private → Throne (role-based)
+2. CharB (different House) should reach: Gate (BLOCKED)
+3. CharC (any House noble) should reach: Hall (if gate bypassed)
+4. CharD (Warmaster) should reach: War Room
+5. CharE (Treasurer) should reach: Vault
+
+Each character should be blocked at appropriate security level.
+
+
+SUCCESS CRITERIA
+================
+
+✓ house() correctly checks specific House
+✓ hashouse() allows any House member
+✓ nohouse() allows only non-House characters
+✓ housetype() checks exact House type
+✓ housemintype() respects House hierarchy
+✓ houseor() allows multiple specified Houses
+✓ not_house() blocks specific House
+✓ houserole() checks role correctly
+✓ AND logic requires all conditions
+✓ OR logic allows any condition
+✓ NOT logic inverts conditions
+✓ Staff bypass works with perm(Builder)
+✓ Case-insensitive House name matching
+✓ Custom fail messages display correctly
+✓ Complex locks with multiple operators work
+✓ Lock persists after server reload
+
+
+COMMON ISSUES AND SOLUTIONS
+============================
+
+Issue: Lock doesn't work at all
+- Check: @examine/locks exit - is lock actually set?
+- Check: Character actually has house assigned?
+- Check: House name spelled correctly?
+
+Issue: Everyone blocked including valid members
+- Add staff bypass: OR perm(Builder)
+- Check lock syntax for errors
+- Verify character's house with: @py self.db.house.key
+
+Issue: houserole() not working
+- Verify role exists: +house/role HouseName/list
+- Verify character name matches role holder exactly
+- Check case sensitivity of role name
+
+Issue: Lock changed but still using old behavior
+- Try: @reload (reload server)
+- Or recreate the lock entirely
+
+Issue: Complex lock behaving strangely
+- Simplify to test each component separately
+- Check parentheses placement carefully
+- Test AND/OR precedence
+
+
+CLEANUP AFTER TESTING
+======================
+
+1. Remove test locks:
+   @lock/del/traverse <all test exits>
+
+2. Remove test rooms (if desired):
+   @destroy <room>
+
+3. Remove test characters (optional):
+   @delaccount <character>
+
+4. Remove test Houses (optional):
+   +house/destroy TestHouseA
+   +house/destroy TestHouseB
+   +house/destroy TestGreatHouse
+
+5. Verify no orphaned data:
+   +house/list
+   +planet/list
+

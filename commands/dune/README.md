@@ -227,6 +227,8 @@ These commands are automatically added to all characters through the `DuneCmdSet
 - `CmdHouse.py` - Noble House creation and management commands (staff only)
 - `CmdRoster.py` - Roster viewing and management commands
 - `CmdOrganization.py` - Organization (School/Guild/Order/Faction) commands (staff only)
+- `CmdPlanet.py` - Planet creation and management commands (staff only)
+- `CmdRoom.py` - Room management and planet association commands (staff only)
 - `dune_cmdset.py` - Command set definition
 - `__init__.py` - Package initialization
 
@@ -236,6 +238,11 @@ These commands are automatically added to all characters through the `DuneCmdSet
 - `HOUSE_QUICK_REFERENCE.md` - Quick reference for House commands
 - `ROSTER_SYSTEM_README.md` - Complete roster system documentation
 - `ROSTER_QUICK_REFERENCE.md` - Quick reference for roster commands
+- `PLANET_SYSTEM_README.md` - Complete Planet system documentation
+- `PLANET_QUICK_REFERENCE.md` - Quick reference for Planet commands
+- `TEST_PLANET_CREATION.txt` - Example planet creation walkthrough
+- `ROOM_COMMAND_README.md` - Complete room management documentation
+- `ROOM_QUICK_REFERENCE.md` - Quick reference for room commands
 
 ### House Management
 
@@ -315,29 +322,29 @@ Create and manage Schools, Guilds, Orders, and Factions.
 ```
 +org <name> - View organization
 +org/list [type] - List all organizations
-+orgcreate <name>=<type> - Create new (school, guild, order, faction)
-+orgset <org>/<switch>=<value> - Configure organization
-+orgrole <org>/... - Manage organization positions
++org/create <name>=<type> - Create new (school, guild, order, faction)
++org/set <org>/<property>=<value> - Configure organization
++org/role <org>/... - Manage organization positions
 ```
 
 **Examples:**
 ```
-+orgcreate Bene Gesserit=school
-+orgset Bene Gesserit/trait=Secretive
-+orgset Bene Gesserit/headquarters=Wallach IX
-+orgrole Bene Gesserit/set Reverend Mother=Gaius Helen Mohiam
++org/create Bene Gesserit=school
++org/set Bene Gesserit/trait=Secretive
++org/set Bene Gesserit/headquarters=Wallach IX
++org/role Bene Gesserit/set Reverend Mother=Gaius Helen Mohiam
 +rosterset Bene Gesserit/add Lady Jessica=Reverend Mother:Trained in Voice
 ```
 
 **Example:**
 ```
-+housecreate Molay=House Minor
-+houseset Molay/banner=White,Red
-+houseset Molay/crest=Scroll
-+housedomain Molay/add primary=Artistic:Produce:Poetry
-+houserole Molay/set Ruler=Lady Elara Molay
-+houseenemy Molay/add=House Arcuri:Loathing:Morality
-+housemember Molay/add=YourCharacter
++house/create Molay=House Minor
++house/set Molay/banner=White,Red
++house/set Molay/crest=Scroll
++house/domain Molay/add primary=Artistic:Produce:Poetry
++house/role Molay/set Ruler=Lady Elara Molay
++house/enemy Molay/add=House Arcuri:Loathing:Morality
++house/member Molay/add=YourCharacter
 ```
 
 See the House documentation files for complete details on:
@@ -347,6 +354,152 @@ See the House documentation files for complete details on:
 - Roles and positions
 - Enemy Houses and rivalries
 - Homeworld creation
+
+### Planet System
+
+A comprehensive Planet system allows staff to create and manage planetary bodies throughout the Imperium. Planets can have political affiliations with Houses, host multiple organizations, and define characteristics like habitability, population, and industries.
+
+**For detailed Planet system documentation, see:**
+- `PLANET_SYSTEM_README.md` - Complete Planet system documentation
+- `PLANET_QUICK_REFERENCE.md` - Quick command reference
+- `TEST_PLANET_CREATION.txt` - Example planet creation walkthrough
+
+#### +planet (All Players)
+View Planet information.
+
+**Usage:**
+```
++planet <name> - View planet details
++planet/list - List all planets
+```
+
+**Examples:**
+```
++planet Arrakis
++planet Vallabhi
++planet/list
+```
+
+#### Planet Creation Commands (Staff Only - Builder+)
+
+All Planet creation and editing commands require Builder permission or higher.
+
+**Core Commands:**
+```
++planet/create <name> - Create a new planet
++planet/set <planet>/<property>=<value> - Set planet properties
++planet/house <planet>/... - Manage Houses on planet
++planet/org <planet>/... - Manage Organizations on planet
+```
+
+**Properties:**
+- `habitability` - Uninhabitable, Habitable, Asteroid, or Terran
+- `type` - World type (Gas giant, Rocky world, Arid World, etc.)
+- `star` - Star system name
+- `affiliation` - House that controls the planet
+- `population` - Number of inhabitants
+- `industries` - Industries present or what planet is known for
+- `military` - Military capabilities description
+- `notes` - Main planet description
+- `other` - Additional notes
+
+**Example:**
+```
++planet/create Vallabhi
++planet/set Vallabhi/habitability=Habitable
++planet/set Vallabhi/type=Mineral World
++planet/set Vallabhi/star=Beta Tucanae IV
++planet/set Vallabhi/population=3,300,000
++planet/set Vallabhi/industries=Ore-refining of local metals and gems
++planet/set Vallabhi/military=Ground forces, space fleet, basic planetary defenses
++planet/set Vallabhi/affiliation=House Nagara
++planet/house Vallabhi/add=House Molay
++planet/house Vallabhi/add=House Arcuri
++planet/org Vallabhi/add=Bene Gesserit School
++planet/org Vallabhi/add=Spacing Guild
++planet Vallabhi
+```
+
+See the Planet documentation files for complete details on:
+- Habitability types and world types
+- Population and lifestyle settings
+- House and organization management on planets
+- Political affiliations
+- Room integration with planets
+
+### Room Management
+
+A comprehensive room management system allows builders to configure rooms and associate them with planets from the planet system. This integration provides proper context for room locations and enables future planet-based features.
+
+**For detailed room management documentation, see:**
+- `ROOM_COMMAND_README.md` - Complete room management documentation
+- `ROOM_QUICK_REFERENCE.md` - Quick command reference
+
+#### +room (Builder+)
+Manage room properties and planet associations.
+
+**Usage:**
+```
++room                              - View current room info
++room <dbref>                      - View specific room info
++room/planet here=<planet>         - Associate room with planet
++room/area here=<name>/<code>      - Set area information
++room/hierarchy here=<p>,<r>       - Set location hierarchy
++room/places here                  - Toggle places system
+```
+
+**Examples:**
+```
++room
++room #123
++room/planet here=Vallabhi
++room/planet #456=Arrakis
++room/area here=Palace District/PD01
++room/hierarchy here=Vallabhi,Northern Mountains
+```
+
+**Planet Association:**
+
+The `/planet` switch links rooms to planets with validation:
+- Checks planet exists in the system
+- Validates target is a room
+- Updates location hierarchy automatically
+- Enables future planet-based room features
+
+**Hierarchy Structure:**
+
+Room headers display: **Room Name - Location - Planet**
+
+Example: `Nagara Square - Kyotashi - Vallabhi`
+
+**Example Workflow:**
+```
+# Create a planet
++planet/create Vallabhi
++planet/set Vallabhi/type=Mineral World
+
+# Dig and set up a room
+@dig Nagara Square
+@tel Nagara Square
++room/location here=Kyotashi
++room/planet here=Vallabhi
++room/area here=Palace District/PD01
++room
+
+# Result: Nagara Square - Kyotashi - Vallabhi
+
+# Set up another room remotely
++room/location #789=Mining District
++room/planet #789=Vallabhi
++room/area #789=Mining Tunnels/ID03
+```
+
+See the Room documentation files for complete details on:
+- Viewing room information
+- Planet association and validation
+- Area and hierarchy management
+- Places system integration
+- Bulk room setup workflows
 
 ## Future Development
 
@@ -361,4 +514,8 @@ Potential additions:
 - Organization reputation tracking
 - Training progression systems
 - Rank advancement workflows
+- Planet-room integration (rooms inherit planet features)
+- Planetary atmospheric and gravity effects
+- Local time and weather based on planet
+- Resource management tied to planets
 

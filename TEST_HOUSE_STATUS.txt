@@ -1,0 +1,421 @@
+HOUSE STATUS AND REPUTATION SYSTEM - TEST PROCEDURE
+====================================================
+
+This test file documents how to verify the House Status and Reputation system is working correctly.
+
+TEST 1: Auto-Set Status on House Creation
+------------------------------------------
+Command: +house/create TestHouse=House Minor
+
+Expected Result:
+- House created successfully
+- Message shows: "Default status set to 25 (Reputation: Respected)."
+- Automatically initializes status based on House type
+
+TEST 2: View Status in House Display
+-------------------------------------
+Command: +house TestHouse
+
+Expected Result:
+- House display includes Status section:
+  * Status: 25/100
+  * Reputation: Respected (in green)
+  * Effects: No modifiers
+
+TEST 3: View Status Summary
+----------------------------
+Command: +house/status TestHouse
+
+Expected Result:
+- Shows House Type
+- Shows current status (25/100)
+- Shows reputation with color (Respected in green)
+- Shows effects summary
+- Lists available commands
+
+TEST 4: View Detailed Reputation Info
+--------------------------------------
+Command: +house/status TestHouse/reputation
+
+Expected Result:
+- Current status and reputation
+- Full description of what Respected means
+- Mechanical effects breakdown
+- Reputation thresholds for House Minor:
+  * Feeble: 0-10 | Weak: 11-20 | Respected: 21-40
+  * Strong: 41-50 | Problematic: 51-70 | Dangerous: 71+
+
+TEST 5: Set Status to Specific Value
+-------------------------------------
+Command: +house/status TestHouse/set=35
+
+Expected Result:
+- Success message: "Status set to 35. Reputation remains Respected."
+- (Still in Respected range for Minor House)
+
+TEST 6: Set Status Causing Reputation Change
+---------------------------------------------
+Command: +house/status TestHouse/set=45
+
+Expected Result:
+- Success message: "Status set to 45. Reputation changed from Respected to Strong."
+- New reputation reflects new status threshold
+
+TEST 7: Adjust Status by Positive Amount
+-----------------------------------------
+Command: +house/status TestHouse/adjust=+8
+
+Expected Result:
+- Success message showing:
+  * "Status changed by +8 (45 → 53)."
+  * "Reputation changed from Strong to Problematic!"
+  * (Crossed threshold from 41-50 Strong to 51-70 Problematic)
+
+TEST 8: Adjust Status by Negative Amount
+-----------------------------------------
+Command: +house/status TestHouse/adjust=-20
+
+Expected Result:
+- Success message showing:
+  * "Status changed by -20 (53 → 33)."
+  * "Reputation changed from Problematic to Respected!"
+
+TEST 9: Boundary Testing - Set to 0
+------------------------------------
+Command: +house/status TestHouse/set=0
+
+Expected Result:
+- Status set to 0
+- Reputation: Feeble (red color)
+- Effects show +2 Difficulty penalties
+
+TEST 10: Boundary Testing - Set to 100
+---------------------------------------
+Command: +house/status TestHouse/set=100
+
+Expected Result:
+- Status set to 100
+- For Minor House: Reputation: Dangerous (bright red)
+- Effects show -2 Difficulty to actions, +2 to diplomatic
+
+TEST 11: Error Handling - Invalid Value
+----------------------------------------
+Command: +house/status TestHouse/set=150
+
+Expected Result:
+- Error message: "Status must be between 0 and 100."
+
+TEST 12: Error Handling - Non-numeric Value
+--------------------------------------------
+Command: +house/status TestHouse/set=high
+
+Expected Result:
+- Error message: "Status must be a number."
+
+TEST 13: Different House Types - Major House
+----------------------------------------------
+Command: +house/create MajorTest=House Major
+Command: +house MajorTest
+
+Expected Result:
+- Status: 45/100
+- Reputation: Respected
+- Different thresholds apply (41-60 is Respected for Major)
+
+TEST 14: Different House Types - Great House
+---------------------------------------------
+Command: +house/create GreatTest=Great House
+Command: +house GreatTest
+
+Expected Result:
+- Status: 65/100
+- Reputation: Respected
+- Different thresholds apply (61-70 is Respected for Great)
+
+TEST 15: Different House Types - Nascent House
+-----------------------------------------------
+Command: +house/create NascentTest=Nascent House
+Command: +house NascentTest
+
+Expected Result:
+- Status: 15/100
+- Reputation: Weak (uses Minor House table)
+- Same thresholds as Minor House
+
+TEST 16: Reputation Colors Display Correctly
+---------------------------------------------
+Test each reputation level for correct color coding:
+
++house/status TestMinor/set=5    # Feeble (red)
++house/status TestMinor/set=15   # Weak (yellow)
++house/status TestMinor/set=30   # Respected (green)
++house/status TestMinor/set=45   # Strong (cyan)
++house/status TestMinor/set=60   # Problematic (magenta)
++house/status TestMinor/set=75   # Dangerous (bright red)
+
+Expected Result:
+- Each reputation displays in correct color
+- Effects change appropriately
+
+TEST 17: Status Persists After Reload
+--------------------------------------
+1. Set status: +house/status TestHouse/set=55
+2. Note reputation: Problematic
+3. Reload server
+4. Check: +house TestHouse
+
+Expected Result:
+- Status still 55
+- Reputation still Problematic
+- No data loss
+
+TEST 18: Permission Check - Non-staff
+--------------------------------------
+As non-staff player:
+Command: +house/status TestHouse/set=50
+
+Expected Result:
+- Error: "You need Builder permission or higher to manage Houses."
+
+TEST 19: Permission Check - Non-staff View
+-------------------------------------------
+As non-staff player:
+Command: +house TestHouse
+
+Expected Result:
+- Can see House display including status and reputation
+- No error messages
+- Status information visible to all
+
+TEST 20: Complete House Creation Workflow
+------------------------------------------
++house/create NewHouse=House Minor
++house/skill NewHouse/init=7,6,6,5,4
++house/status NewHouse
++house/status NewHouse/adjust=+5
++house/set NewHouse/banner=Blue,Gold
++house/domain NewHouse/add primary=Military:Expertise:Tactical officers
++house NewHouse
+
+Expected Result:
+- House created with status 25
+- Skills assigned
+- Status adjusted to 30
+- All systems work together
+- Display shows all information cohesively
+
+
+COMPLETE EXAMPLE: House at Different Reputation Levels
+=======================================================
+
+## Feeble Minor House (Status 8)
+
++house/create Fallen=House Minor
++house/status Fallen/set=8
+
+VIEW: +house Fallen
+
+EXPECTED DISPLAY:
+Status: 8/100
+Reputation: Feeble (red)
+Effects: Aggressive actions: +2 Diff | Gaining allies: +2 Diff
+
+NARRATIVE: House Fallen is alone and vulnerable. Other Houses see opportunity. 
+Any military action or diplomatic overture faces severe penalties.
+
+## Weak Minor House (Status 18)
+
++house/status Fallen/adjust=+10
+# Now at 18, Weak
+
+VIEW: +house Fallen
+
+EXPECTED DISPLAY:
+Status: 18/100
+Reputation: Weak (yellow)
+Effects: Aggressive actions: +1 Diff | Gaining allies/favor: +1 Diff
+
+NARRATIVE: House Fallen is recovering but still wounded. Must rebuild carefully.
+
+## Respected Minor House (Status 30)
+
++house/status Fallen/set=30
+
+VIEW: +house Fallen
+
+EXPECTED DISPLAY:
+Status: 30/100
+Reputation: Respected (green)
+Effects: No modifiers
+
+NARRATIVE: House Fallen has regained its footing. Occupies expected position.
+
+## Strong Minor House (Status 48)
+
++house/status Fallen/adjust=+18
+# Now at 48, Strong (renamed to Rising)
+
+VIEW: +house Rising
+
+EXPECTED DISPLAY:
+Status: 48/100
+Reputation: Strong (cyan)
+Effects: All House actions: -1 Diff
+
+NARRATIVE: House Rising is thriving. People are confident. Good position.
+
+## Problematic Minor House (Status 65)
+
++house/status Rising/set=65
+
+VIEW: +house Rising
+
+EXPECTED DISPLAY:
+Status: 65/100
+Reputation: Problematic (magenta)
+Effects: Aggressive: -2 Diff | Diplomatic: +1 Diff | +1 Threat
+
+NARRATIVE: House Rising is too ambitious. Others are nervous. Easier to act 
+aggressively but diplomacy suffers. Other Houses plotting.
+
+## Dangerous Minor House (Status 80)
+
++house/status Rising/adjust=+15
+# Now at 80, Dangerous (renamed to Threat)
+
+VIEW: +house Threat
+
+EXPECTED DISPLAY:
+Status: 80/100
+Reputation: Dangerous (bright red)
+Effects: Actions: -2 Diff | Diplomatic: +2 Diff | +1 Threat per action
+
+NARRATIVE: House Threat is dangerously powerful for a Minor House. Possibly 
+making play for Major House status. Active opposition from peers. Powerful 
+but isolated.
+
+
+EXAMPLE: Different House Types at Same Status
+==============================================
+
+Create three Houses, all at status 50:
+
++house/create Minor50=House Minor
++house/create Major50=House Major
++house/create Great50=Great House
+
++house/status Minor50/set=50
++house/status Major50/set=50
++house/status Great50/set=50
+
+COMPARE REPUTATIONS:
+
+Minor50:  Status 50/100 - Strong (41-50 range)
+Major50:  Status 50/100 - Respected (41-60 range)
+Great50:  Status 50/100 - Weak (41-60 range for Great is Weak!)
+
+INSIGHT: The same status value means different things for different House types.
+A Minor House at 50 is doing very well. A Major House at 50 is normal. A Great 
+House at 50 has suffered major losses and is weakened.
+
+
+STAFF TRAINING EXAMPLES
+=======================
+
+## Example 1: Military Victory
+
+House Molay wins a significant battle against House Arcuri.
+
+Command: +house/status Molay/adjust=+8
+
+Notification to players:
+"House Molay's status has increased by +8 (27 → 35) due to your decisive 
+victory over House Arcuri's forces at the Battle of Molay Prime. Your 
+reputation remains Respected."
+
+## Example 2: Diplomatic Scandal
+
+House Vernius is caught in a major espionage scandal.
+
+Command: +house/status Vernius/adjust=-12
+
+Notification:
+"House Vernius's status has decreased by -12 (58 → 46) following the 
+revelation of illegal spying operations in the Landsraad. Reputation has 
+changed from Strong to Respected as other Houses distance themselves."
+
+## Example 3: Acquiring New Territory
+
+House Richese successfully annexes a resource-rich moon.
+
+Command: +house/status Richese/adjust=+10
+
+Notification:
+"House Richese's status has increased by +10 (70 → 80) due to the successful 
+annexation of Korona Moon and its spice deposits. Reputation changed from 
+Strong to Problematic as other Houses grow concerned about Richese's 
+expanding power."
+
+## Example 4: Failed Major Venture
+
+House Ordos's attempt to develop new technology catastrophically fails.
+
+Command: +house/status Ordos/adjust=-15
+
+Notification:
+"House Ordos's status has decreased by -15 (55 → 40) following the 
+catastrophic failure of the Atomics Research Project. Reputation changed 
+from Problematic to Respected as the House's ambitions are curtailed."
+
+
+STATUS CHANGE GUIDELINES
+========================
+
+Use these as reference when adjusting status:
+
+MINOR CHANGES (±1 to ±3)
+- Small diplomatic success/failure
+- Minor skirmish won/lost
+- Small scandal contained/exposed
+- Routine trade deal success/failure
+
+MODERATE CHANGES (±4 to ±7)
+- Significant battle outcome
+- Important diplomatic achievement
+- Medium-sized scandal
+- Resource discovery/loss
+- Alliance formed/broken
+
+MAJOR CHANGES (±8 to ±15)
+- Major military campaign outcome
+- Crucial diplomatic triumph/disaster
+- Major scandal affecting multiple Houses
+- Significant territory gained/lost
+- Major venture success/failure
+
+CATASTROPHIC CHANGES (±16 to ±30)
+- House-defining victory/defeat
+- Existential diplomatic success/crisis
+- Catastrophic scandal
+- Complete military collapse
+- Paradigm-shifting achievement
+
+
+SUCCESS CRITERIA
+================
+
+✓ Default status set correctly on House creation by type
+✓ All six reputation levels calculate correctly
+✓ Thresholds differ appropriately by House type
+✓ Color coding displays properly
+✓ Mechanical effects display in House view
+✓ Set command works with validation
+✓ Adjust command handles positive and negative values
+✓ Reputation changes reported when thresholds crossed
+✓ Status persists after server reload
+✓ Permission control works (staff-only management)
+✓ All players can view status
+✓ Documentation is comprehensive
+✓ System integrates with existing House features
+
+

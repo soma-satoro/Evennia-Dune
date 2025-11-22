@@ -39,8 +39,21 @@ class Room(ObjectParent, DefaultRoom):
         # Default attributes for room display
         self.db.area_name = "Unknown Area"
         self.db.area_code = "XX00"
-        self.db.location_hierarchy = ["Unknown Planet", "Unknown Region"]
+        # Hierarchy is [Location, Planet]
+        self.db.location_hierarchy = ["Unknown Location", "Unknown Planet"]
         self.db.places_active = False
+        self.db.planet = None  # Planet object reference
+        
+        # Threat - GM resource pool for this scene
+        self.db.threat = 0
+        
+        # Pending contest - stores opponent's roll results for contested tests
+        # Format: {"opponent": character, "successes": int, "modifiers": int, "active_character": character}
+        self.db.pending_contest = None
+        
+        # Extended tasks - scene-based tasks requiring multiple skill tests
+        # Format: {task_name: {"requirement": int, "points": int, "max_attempts": int, "attempts": int, "contributing": [characters]}}
+        self.db.extended_tasks = {}
         
     def return_appearance(self, looker, **kwargs):
         """

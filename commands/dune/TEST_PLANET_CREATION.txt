@@ -1,0 +1,129 @@
+PLANET CREATION TEST - VALLABHI
+================================
+
+This file demonstrates creating the planet Vallabhi with all its characteristics,
+matching the example in the planet system specification.
+
+Step 1: Create the planet
+--------------------------
++planet/create Vallabhi
+
+Step 2: Set basic characteristics
+----------------------------------
++planet/set Vallabhi/habitability=Habitable
++planet/set Vallabhi/type=Mineral World
++planet/set Vallabhi/star=Beta Tucanae IV
+
+Step 3: Set population and economy
+-----------------------------------
++planet/set Vallabhi/population=3,300,000
++planet/set Vallabhi/industries=Ore-refining of local metals and gems
+
+Step 4: Set military capabilities
+----------------------------------
++planet/set Vallabhi/military=Ground forces, space fleet, basic planetary defenses
+
+Step 5: Set political affiliation
+----------------------------------
++planet/set Vallabhi/affiliation=House Nagara
+
+Step 6: Add additional houses
+------------------------------
++planet/house Vallabhi/add=House Molay
++planet/house Vallabhi/add=House Arcuri
+
+Step 7: Add organizations
+--------------------------
++planet/org Vallabhi/add=Bene Gesserit School
++planet/org Vallabhi/add=Spacing Guild
+
+Step 8: Set planet notes
+-------------------------
++planet/set Vallabhi/notes=Vallabhi is a mountainous world with deep valleys. It has vast lakes rather than seas, and many islands. These islands are dangerous to live on due to unpredictable and violent tides, but fishermen and smugglers from minor Houses make a home here.
+
+Step 9: Set other notes
+------------------------
++planet/set Vallabhi/other=House Nagara's home city of Kyotashi is set upon one of the broad mountain terraces that make up the Rinumian Ridge, a chain of mountains that are extensively mined. House Nagara manages the mineral wealth of the planet, with the assistance of the minor House Arcuri. However the dramatic landscape has also inspired poets, who are drawn to the training halls of the other minor House Molay.
+
+Step 10: View the completed planet
+-----------------------------------
++planet Vallabhi
+
+
+EXPECTED OUTPUT:
+================================================================================
+
+                                VALLABHI                                      
+
+                            BETA TUCANAE IV
+
+================================================================================
+
+Habitability: Habitable     Type: Mineral World    Affiliation: House Nagara
+
+--------------------------------------------------------------------------------
+
+Population:       3,300,000 inhabitants
+
+Industries:       Ore-refining of local metals and gems
+
+Military Power:   Ground forces, space fleet, basic planetary defenses
+
+Houses:           Nagara, Molay, Arcuri
+
+Organizations:    Bene Gesserit School, Spacing Guild
+
+--------------------------------------------------------------------------------
+
+Planet Notes:
+
+Vallabhi is a mountainous world with deep valleys. It has vast lakes rather than
+seas, and many islands. These islands are dangerous to live on due to
+unpredictable and violent tides, but fishermen and smugglers from minor Houses
+make a home here.
+
+
+Other Notes:
+
+House Nagara's home city of Kyotashi is set upon one of the broad mountain
+terraces that make up the Rinumian Ridge, a chain of mountains that are
+extensively mined. House Nagara manages the mineral wealth of the planet, with
+the assistance of the minor House Arcuri. However the dramatic landscape has
+also inspired poets, who are drawn to the training halls of the other minor
+House Molay.
+
+================================================================================
+
+
+OTHER TEST CASES:
+=================
+
+Test listing all planets:
++planet/list
+
+Test listing houses on Vallabhi:
++planet/house Vallabhi/list
+
+Test listing organizations on Vallabhi:
++planet/org Vallabhi/list
+
+Test removing a house:
++planet/house Vallabhi/remove=House Molay
++planet Vallabhi
++planet/house Vallabhi/add=House Molay
+
+Test removing an organization:
++planet/org Vallabhi/remove=Spacing Guild
++planet Vallabhi
++planet/org Vallabhi/add=Spacing Guild
+
+Test modifying population:
++planet/set Vallabhi/population=3500000
++planet Vallabhi
++planet/set Vallabhi/population=3300000
+
+Test changing affiliation:
++planet/set Vallabhi/affiliation=House Molay
++planet Vallabhi
++planet/set Vallabhi/affiliation=House Nagara
+

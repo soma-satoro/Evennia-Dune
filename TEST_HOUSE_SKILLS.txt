@@ -1,0 +1,235 @@
+HOUSE SKILLS SYSTEM - TEST PROCEDURE
+=====================================
+
+This test file documents how to verify the House Skills system is working correctly.
+
+TEST 1: View Default Values
+----------------------------
+Command: +house/skill TestHouse/values
+
+Expected Result:
+- Shows House type
+- Lists recommended starting values (e.g., 7,6,6,5,4 for Minor House)
+- Shows current skills (should be 0 if not set)
+- Displays skill descriptions
+- Shows usage examples
+
+TEST 2: Initialize All Skills
+------------------------------
+Command: +house/skill TestHouse/init=7,6,6,5,4
+
+Expected Result:
+- Success message
+- Shows all five skills with their new values:
+  * Battle: 7
+  * Communicate: 6
+  * Discipline: 6
+  * Move: 5
+  * Understand: 4
+
+TEST 3: Set Individual Skill
+-----------------------------
+Command: +house/skill TestHouse/set Battle=8
+
+Expected Result:
+- Success message: "Set Battle to 8."
+
+TEST 4: View House Display
+---------------------------
+Command: +house TestHouse
+
+Expected Result:
+- House display includes "House Skills" section
+- Shows all five skills with values and descriptions:
+  * Battle: 8 (Military power and tactical skill)
+  * Communicate: 6 (Diplomatic reputation and influence)
+  * Discipline: 6 (Loyalty of people and forces)
+  * Move: 5 (Response time and crisis management)
+  * Understand: 4 (Academic excellence and research)
+
+TEST 5: Error Handling - Invalid Skill Name
+--------------------------------------------
+Command: +house/skill TestHouse/set InvalidSkill=5
+
+Expected Result:
+- Error message: "Invalid skill. Valid skills: Battle, Communicate, Discipline, Move, Understand"
+
+TEST 6: Error Handling - Invalid Value
+---------------------------------------
+Command: +house/skill TestHouse/set Battle=999
+
+Expected Result:
+- Error message: "Skill value must be between 0 and 12."
+
+TEST 7: Error Handling - Non-numeric Value
+-------------------------------------------
+Command: +house/skill TestHouse/set Battle=high
+
+Expected Result:
+- Error message: "Skill value must be a number."
+
+TEST 8: Error Handling - Wrong Number of Values
+------------------------------------------------
+Command: +house/skill TestHouse/init=7,6,5
+
+Expected Result:
+- Error message: "You must provide exactly 5 values: Battle, Communicate, Discipline, Move, Understand"
+
+TEST 9: Permission Check - Non-staff
+-------------------------------------
+As a non-staff player:
+Command: +house/skill TestHouse/values
+
+Expected Result:
+- Error message: "You need Builder permission or higher to manage Houses."
+
+TEST 10: View-Only Access - Non-staff
+--------------------------------------
+As a non-staff player:
+Command: +house TestHouse
+
+Expected Result:
+- Can see House display including skills section
+- No error messages
+
+TEST 11: Skills Persist After Reload
+-------------------------------------
+1. Set skills: +house/skill TestHouse/init=7,6,6,5,4
+2. Reload server
+3. View House: +house TestHouse
+
+Expected Result:
+- Skills still show correct values after reload
+- No data loss
+
+TEST 12: Complete House Creation Workflow
+------------------------------------------
++house/create NewHouse=House Minor
++house/skill NewHouse/values
++house/skill NewHouse/init=7,6,6,5,4
++house/set NewHouse/banner=Blue,Gold
++house/domain NewHouse/add primary=Military:Expertise:Tactical officers
++house
+
+Expected Result:
+- House created successfully
+- Skills assigned correctly
+- Skills align with Military domain (high Battle makes sense)
+- All information displays together cohesively
+
+EXAMPLE: Creating a Balanced Minor House
+=========================================
+
+# Create House Talon - A balanced Minor House
++house/create Talon=House Minor
+
+# Check recommendations
++house/skill Talon/values
+# Recommended: 7, 6, 6, 5, 4
+
+# Assign skills for a balanced military-political House
++house/skill Talon/init=7,6,6,5,4
+# Battle: 7 (strong military)
+# Communicate: 6 (decent diplomacy)
+# Discipline: 6 (loyal forces)
+# Move: 5 (average response)
+# Understand: 4 (practical, not academic)
+
+# Set banner
++house/set Talon/banner=Silver,Black
++house/set Talon/crest=Talon
+
+# Add appropriate domains
++house/domain Talon/add primary=Military:Expertise:Veteran officers
++house/domain Talon/add secondary=Political:Workers:Courtiers
+
+# View complete House
++house Talon
+
+EXPECTED OUTPUT:
+================================================================================
+                                  House Talon                                  
+================================================================================
+
+House Type: House Minor
+Threat Level: 1 per player
+
+--------------------------------- House Skills ---------------------------------
+  Battle: 7 (Military power and tactical skill)
+  Communicate: 6 (Diplomatic reputation and influence)
+  Discipline: 6 (Loyalty of people and forces)
+  Move: 5 (Response time and crisis management)
+  Understand: 4 (Academic excellence and research)
+
+Banner Colors: Silver, Black
+Crest: Talon
+
+------------------------------ Primary Domains ---------------------------------
+  1. Military (Expertise): Veteran officers
+
+----------------------------- Secondary Domains --------------------------------
+  1. Political (Workers): Courtiers
+
+================================================================================
+
+
+EXAMPLE: Creating a Diplomatic Great House
+===========================================
+
++house/create Envira=Great House
++house/skill Envira/values
+# Recommended: 9, 8, 7, 6, 5
+
+# High Communicate and Move for diplomatic excellence
++house/skill Envira/init=6,9,7,8,5
+# Battle: 6
+# Communicate: 9 (legendary diplomacy)
+# Discipline: 7 (stable administration)
+# Move: 8 (rapid diplomatic response)
+# Understand: 5
+
++house/set Envira/banner=Purple,White
++house/domain Envira/add primary=Political:Produce:Political influence
++house/domain Envira/add primary=Espionage:Workers:Intelligence network
++house/domain Envira/add secondary=Military:Expertise:Honor guard
++house Envira
+
+
+NOTES FOR STAFF
+===============
+
+1. Skills should align with domains:
+   - Military domain → High Battle
+   - Political domain → High Communicate
+   - Science domain → High Understand
+   - Espionage domain → High Move
+   - Religion domain → High Discipline
+
+2. Total skill points by House type:
+   - Great House: 35 (9+8+7+6+5)
+   - Major House: 30 (8+7+6+5+4)
+   - Minor House: 28 (7+6+6+5+4)
+   - Nascent House: 24 (6+5+5+4+4)
+
+3. No skill should be "orphaned" - every high skill should have
+   supporting domains.
+
+4. Skills can be adjusted later with individual /set commands as
+   Houses develop through RP.
+
+5. Document any skill changes in House notes with reasoning.
+
+
+SUCCESS CRITERIA
+================
+
+✓ All commands execute without errors
+✓ Skills display correctly in House view
+✓ Skills persist after server reload
+✓ Error messages are clear and helpful
+✓ Permissions work correctly (Builder+ only for editing)
+✓ Skills align with House domains logically
+✓ Documentation is comprehensive and accessible
+✓ System integrates seamlessly with existing House features
+
+
