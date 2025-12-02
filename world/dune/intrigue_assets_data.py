@@ -2,7 +2,7 @@
 Intrigue Assets Data
 
 This module defines all Intrigue Assets available in Dune.
-These can be used to create Asset objects with the correct properties.
+Asset data is stored separately from typeclass logic.
 """
 
 # Intrigue Assets organized by category
@@ -164,53 +164,4 @@ INTRIGUE_ASSETS = {
         "special": "As an Asset: A long-serving member of the court, having seen it all and survived various coup attempts, this asset knows everything and everyone, and is wily enough to avoid the worst of the fallout. Note: All Courtiers will also need to be created as NPC objects along with assets."
     }
 }
-
-
-def create_intrigue_asset(asset_name, character=None):
-    """
-    Create an Intrigue Asset object.
-    
-    Args:
-        asset_name (str): Name of the asset to create
-        character (Character, optional): Character to give the asset to
-        
-    Returns:
-        Asset: The created Asset object, or None if asset_name not found
-    """
-    from evennia import create_object
-    from typeclasses.assets import Asset
-    
-    if asset_name not in INTRIGUE_ASSETS:
-        return None
-    
-    asset_data = INTRIGUE_ASSETS[asset_name]
-    
-    # Create the asset object
-    asset = create_object(
-        Asset,
-        key=asset_name,
-        location=character if character else None
-    )
-    
-    # Set asset properties
-    asset.set_asset_type(asset_data["asset_type"])
-    asset.set_quality(asset_data["quality"])
-    asset.set_description(asset_data["description"])
-    asset.set_special(asset_data["special"])
-    
-    # Add keywords
-    for keyword in asset_data["keywords"]:
-        asset.add_keyword(keyword)
-    
-    return asset
-
-
-def get_all_intrigue_asset_names():
-    """
-    Get a list of all Intrigue Asset names.
-    
-    Returns:
-        list: List of asset names
-    """
-    return sorted(INTRIGUE_ASSETS.keys())
 

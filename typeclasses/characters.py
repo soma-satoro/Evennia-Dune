@@ -83,7 +83,12 @@ class Character(ObjectParent, DefaultCharacter):
         # Resource tracking
         self.db.stress = 0              # Current stress (health damage)
         self.db.determination = 1       # Determination points (start with 1 per adventure, max 3)
-        self.db.experience = 0          # Experience points
+        self.db.experience = 0
+        
+        # Playstyle mode: "agent" (default) or "architect"
+        # Agent mode: Direct action requiring personal presence
+        # Architect mode: Remote action using assets from a distance
+        self.db.playstyle_mode = "agent"  # Default to agent mode          # Experience points
         
         # Complications - temporary negative effects from rolling 20
         self.db.complications = []  # List of {"skill": str, "name": str, "description": str}
@@ -271,6 +276,51 @@ class Character(ObjectParent, DefaultCharacter):
             if asset_name_lower == asset.name.lower():
                 return asset
         return None
+    
+    def get_playstyle_mode(self):
+        """
+        Get the character's current playstyle mode.
+        
+        Returns:
+            str: "agent" (default) or "architect"
+        """
+        return self.db.playstyle_mode or "agent"
+    
+    def set_playstyle_mode(self, mode):
+        """
+        Set the character's playstyle mode.
+        
+        Args:
+            mode (str): "agent" or "architect"
+            
+        Returns:
+            bool: True if mode was set successfully, False if invalid mode
+        """
+        valid_modes = ["agent", "architect"]
+        if mode.lower() not in valid_modes:
+            return False
+        self.db.playstyle_mode = mode.lower()
+        return True
+    
+    def get_architect_capable_assets(self):
+        """
+        Get all assets that can be used in Architect mode (remotely).
+        
+        Returns:
+            list: List of Asset objects that can be used remotely
+        """
+        assets = self.get_assets()
+        return [asset for asset in assets if asset.is_architect_capable()]
+    
+    def get_agent_mode_assets(self):
+        """
+        Get all assets that require direct presence (Agent mode only).
+        
+        Returns:
+            list: List of Asset objects that require direct presence
+        """
+        assets = self.get_assets()
+        return [asset for asset in assets if asset.is_agent_mode_only()]
     
     def get_drive_rating(self, drive_name):
         """
@@ -631,6 +681,7 @@ class Character(ObjectParent, DefaultCharacter):
         
         role = role or "None"
         faction = self.db.faction or "None"
+        caste = self.db.caste or "None"
         
         # Show archetype if available
         archetype_info = ""
@@ -640,7 +691,21 @@ class Character(ObjectParent, DefaultCharacter):
             if archetype_trait:
                 archetype_info = f" |wArchetype:|n {archetype_trait}"
         
-        lines.append(f"|wHouse:|n {house:<15} |wRole:|n {role:<15} |wFaction:|n {faction}{archetype_info}")
+        # Character Information Section
+        lines.append(f"|wHouse:|n {house:<12} |wRole:|n {role:<12} |wFaction:|n {faction}")
+        
+        # Second line: Caste, Archetype, and Playstyle Mode
+        info_line = ""
+        if caste != "None":
+            info_line += f"|wCaste:|n {caste:<12} "
+        if archetype_info:
+            info_line += archetype_info
+        # Add playstyle mode
+        playstyle = self.get_playstyle_mode()
+        playstyle_display = "|cArchitect|n" if playstyle == "architect" else "|mAgent|n"
+        info_line += f" |wPlaystyle:|n {playstyle_display}"
+        if info_line:
+            lines.append(info_line.strip())
         
         # Show reputation trait and ambition if set (Step 8 finishing touches)
         bio_info = []
@@ -651,6 +716,30 @@ class Character(ObjectParent, DefaultCharacter):
         if bio_info:
             lines.append("|w" + "-" * 80 + "|n")
             lines.append("  ".join(bio_info))
+        
+        # Show personality, appearance, and relationships if set (compact format)
+        personal_info = []
+        if self.db.personality_traits:
+            # Truncate if too long for single line
+            personality = self.db.personality_traits
+            if len(personality) > 60:
+                personality = personality[:57] + "..."
+            personal_info.append(f"|wPersonality:|n {personality}")
+        if self.db.appearance:
+            appearance = self.db.appearance
+            if len(appearance) > 60:
+                appearance = appearance[:57] + "..."
+            personal_info.append(f"|wAppearance:|n {appearance}")
+        if self.db.relationships:
+            relationships = self.db.relationships
+            if len(relationships) > 60:
+                relationships = relationships[:57] + "..."
+            personal_info.append(f"|wRelationships:|n {relationships}")
+        
+        if personal_info:
+            lines.append("|w" + "-" * 80 + "|n")
+            for info in personal_info:
+                lines.append(info)
         
         # DRIVES - Show ratings and statements (same format as skills)
         # Access drives exactly like skills are accessed

@@ -2,7 +2,7 @@
 Espionage Assets Data
 
 This module defines all Espionage Assets available in Dune.
-These can be used to create Asset objects with the correct properties.
+Asset data is stored separately from typeclass logic.
 """
 
 # Espionage Assets organized by category
@@ -163,53 +163,4 @@ ESPIONAGE_ASSETS = {
         "special": "As an Asset: A political spy can provide information on a War of Assassins, blackmail material, or plans for Landsraad proposals. Catching a spy can result in new information about a known enemy or an unknown adversary. Protecting one's spies and defending against hostile spies is a never-ending battle for the Houses of the Imperium."
     }
 }
-
-
-def create_espionage_asset(asset_name, character=None):
-    """
-    Create an Espionage Asset object.
-    
-    Args:
-        asset_name (str): Name of the asset to create
-        character (Character, optional): Character to give the asset to
-        
-    Returns:
-        Asset: The created Asset object, or None if asset_name not found
-    """
-    from evennia import create_object
-    from typeclasses.assets import Asset
-    
-    if asset_name not in ESPIONAGE_ASSETS:
-        return None
-    
-    asset_data = ESPIONAGE_ASSETS[asset_name]
-    
-    # Create the asset object
-    asset = create_object(
-        Asset,
-        key=asset_name,
-        location=character if character else None
-    )
-    
-    # Set asset properties
-    asset.set_asset_type(asset_data["asset_type"])
-    asset.set_quality(asset_data["quality"])
-    asset.set_description(asset_data["description"])
-    asset.set_special(asset_data["special"])
-    
-    # Add keywords
-    for keyword in asset_data["keywords"]:
-        asset.add_keyword(keyword)
-    
-    return asset
-
-
-def get_all_espionage_asset_names():
-    """
-    Get a list of all Espionage Asset names.
-    
-    Returns:
-        list: List of asset names
-    """
-    return sorted(ESPIONAGE_ASSETS.keys())
 

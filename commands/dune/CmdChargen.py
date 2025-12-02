@@ -5,7 +5,9 @@ Command to create characters following the Modiphius Dune character creation sys
 """
 
 from evennia.commands.default.muxcommand import MuxCommand
-from typeclasses.archetypes import ARCHETYPES, get_archetype, get_all_archetype_names, list_archetypes_by_category
+from typeclasses.archetypes import ARCHETYPES, get_archetype, get_all_archetype_names, list_archetypes_by_category, get_archetypes_by_faction, can_character_take_archetype
+from typeclasses.factions import CASTES, FACTIONS, get_faction, get_all_faction_names, validate_faction_talents, validate_faction_focuses
+from typeclasses.talents import TALENTS, get_talent, get_talents_by_category, get_talents_by_faction, can_character_take_talent, get_all_talent_names
 from commands.dune.CmdSheet import DUNE_FOCUSES
 
 
@@ -17,6 +19,10 @@ class CmdChargen(MuxCommand):
         +chargen/list - List all available archetypes
         +chargen/info <archetype> - Show information about an archetype
         +chargen/archetype <archetype> - Choose your archetype (Step 2)
+        +chargen/caste <caste> - Set your caste (Na-Familia, Bondsman, Pyon)
+        +chargen/faction <faction> - Set your faction (validates requirements)
+        +chargen/faction/list - List all available factions
+        +chargen/faction/info <faction> - Show faction requirements
         +chargen/skills - Set up skills based on archetype (Step 3)
         +chargen/focuses - Add focuses (Step 4)
         +chargen/talents - Add talents (Step 5)
@@ -26,9 +32,11 @@ class CmdChargen(MuxCommand):
     
     Steps:
         2. Choose an archetype
+        2a. Set caste (Na-Familia, Bondsman, Pyon)
+        2b. Set faction (optional, validates mandatory talents/focuses)
         3. Set skills (primary 6, secondary 5, others 4, then add 5 points max 8)
         4. Choose 4 focuses (at least one for primary skill)
-        5. Choose 3 talents
+        5. Choose 3 talents (faction characters must pick mandatory talents)
         6. Set drives (8, 7, 6, 5, 4) and statements for top 3
         7. Create 3 assets (one must be tangible)
         8. Finishing touches (+bio command)
@@ -58,6 +66,27 @@ class CmdChargen(MuxCommand):
                 self.caller.msg("Use |w+chargen/list|n to see available archetypes.")
                 return
             self._set_archetype(self.args.strip())
+            return
+        
+        if "caste" in self.switches:
+            if not self.args:
+                self.caller.msg("Usage: +chargen/caste <caste>")
+                self.caller.msg("Valid castes: Na-Familia, Bondsman, Pyon")
+                return
+            self._set_caste(self.args.strip())
+            return
+        
+        if "faction" in self.switches:
+            if not self.args:
+                if "list" in self.switches:
+                    self._list_factions()
+                    return
+                self.caller.msg("Usage: +chargen/faction <faction> | +chargen/faction/list | +chargen/faction/info <faction>")
+                return
+            if "info" in self.switches:
+                self._show_faction_info(self.args.strip())
+                return
+            self._set_faction(self.args.strip())
             return
         
         if "skills" in self.switches:
@@ -90,6 +119,7 @@ class CmdChargen(MuxCommand):
     def _list_archetypes(self):
         """List all available archetypes organized by category."""
         categories = list_archetypes_by_category()
+        faction = self.caller.db.faction
         
         self.caller.msg("|w" + "=" * 80 + "|n")
         self.caller.msg("|w" + " AVAILABLE ARCHETYPES".center(80) + "|n")
@@ -104,11 +134,32 @@ class CmdChargen(MuxCommand):
                 trait = archetype.get("trait", name)
                 primary = archetype.get("primary_skill", "Unknown")
                 secondary = archetype.get("secondary_skill", "Unknown")
-                self.caller.msg(f"  |w{name:<15}|n |c{primary}/{secondary}|n - {trait}")
+                required_faction = archetype.get("requires_faction", "")
+                
+                display = f"  |w{name:<15}|n |c{primary}/{secondary}|n - {trait}"
+                if required_faction:
+                    if faction and faction.lower() == required_faction.lower():
+                        display += f" |g[{required_faction}]|n"
+                    else:
+                        display += f" |m[{required_faction} only]|n"
+                self.caller.msg(display)
+        
+        # Show faction-specific archetypes if character has a faction
+        if faction:
+            faction_archetypes = get_archetypes_by_faction(faction)
+            if faction_archetypes:
+                self.caller.msg(f"\n|y{faction.upper()} ARCHETYPES:|n")
+                for name, archetype in faction_archetypes:
+                    trait = archetype.get("trait", name)
+                    primary = archetype.get("primary_skill", "Unknown")
+                    secondary = archetype.get("secondary_skill", "Unknown")
+                    self.caller.msg(f"  |w{name:<15}|n |c{primary}/{secondary}|n - {trait} |g[{faction}]|n")
         
         self.caller.msg("\n|w" + "=" * 80 + "|n")
         self.caller.msg("|cUse |w+chargen/info <archetype>|c to see detailed information.|n")
         self.caller.msg("|cUse |w+chargen/archetype <archetype>|c to select an archetype.|n")
+        if not faction:
+            self.caller.msg("|yNote:|n Some archetypes require a specific faction. Set your faction first with |w+chargen/faction <faction>|y|n")
         self.caller.msg("|w" + "=" * 80 + "|n")
     
     def _show_archetype_info(self, archetype_name):
@@ -124,6 +175,17 @@ class CmdChargen(MuxCommand):
         self.caller.msg(f"|w{archetype['trait']}|n")
         self.caller.msg("|w" + "=" * 80 + "|n")
         self.caller.msg(f"|yCategory:|n {archetype['category']}")
+        
+        required_faction = archetype.get("requires_faction", "")
+        if required_faction:
+            self.caller.msg(f"|yRequires Faction:|n {required_faction}")
+            # Check if character can take this archetype
+            can_take, reason = can_character_take_archetype(self.caller, archetype_name)
+            if can_take:
+                self.caller.msg(f"|g✓ {reason}|n")
+            else:
+                self.caller.msg(f"|r✗ {reason}|n")
+        
         self.caller.msg(f"|yPrimary Skill:|n {archetype['primary_skill']}")
         self.caller.msg(f"|ySecondary Skill:|n {archetype['secondary_skill']}")
         
@@ -142,8 +204,149 @@ class CmdChargen(MuxCommand):
         self.caller.msg(f"\n|yDescription:|n {archetype['description']}")
         
         self.caller.msg("\n|w" + "=" * 80 + "|n")
-        self.caller.msg("|cUse |w+chargen/archetype {archetype['trait']}|c to select this archetype.|n")
+        self.caller.msg(f"|cUse |w+chargen/archetype {archetype['trait']}|c to select this archetype.|n")
         self.caller.msg("|w" + "=" * 80 + "|n")
+    
+    def _set_caste(self, caste_name):
+        """Set the character's caste."""
+        caste_lower = caste_name.lower()
+        valid_caste = None
+        
+        for caste in CASTES:
+            if caste.lower() == caste_lower:
+                valid_caste = caste
+                break
+        
+        if not valid_caste:
+            self.caller.msg(f"|rInvalid caste: {caste_name}|n")
+            self.caller.msg(f"|yValid castes:|n {', '.join(CASTES)}")
+            return
+        
+        self.caller.db.caste = valid_caste
+        self.caller.msg(f"|gCaste set to:|n {valid_caste}")
+        
+        # Show descriptions
+        if valid_caste == "Na-Familia":
+            self.caller.msg("|cNobility - Members of the ruling class.|n")
+        elif valid_caste == "Bondsman":
+            self.caller.msg("|cFree individuals who are allowed to own small amounts of land and property, the middle class.|n")
+        elif valid_caste == "Pyon":
+            self.caller.msg("|cLowest classes, often employed as hard laborers.|n")
+    
+    def _list_factions(self):
+        """List all available factions."""
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        self.caller.msg("|w" + " AVAILABLE FACTIONS".center(80) + "|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        
+        for faction_name in sorted(FACTIONS.keys()):
+            faction = FACTIONS[faction_name]
+            mandatory = faction.get("mandatory_talents", [])
+            mandatory_focuses = faction.get("mandatory_focuses", [])
+            
+            req_text = ""
+            if mandatory:
+                if len(mandatory) == 1:
+                    req_text = f"Requires: {mandatory[0]}"
+                else:
+                    note = faction.get("note", "")
+                    if "at least one" in note.lower() or "one of" in note.lower():
+                        req_text = f"Requires one of: {', '.join(mandatory[:3])}..."
+                    elif "both" in note.lower() or "all" in note.lower():
+                        req_text = f"Requires all: {', '.join(mandatory)}"
+                    else:
+                        req_text = f"Requires: {', '.join(mandatory[:2])}..."
+            
+            if mandatory_focuses:
+                if req_text:
+                    req_text += f" + focus from: {', '.join(mandatory_focuses[:3])}..."
+                else:
+                    req_text = f"Requires focus from: {', '.join(mandatory_focuses[:3])}..."
+            
+            if not req_text:
+                req_text = "No mandatory requirements"
+            
+            self.caller.msg(f"  |w{faction_name:<30}|n |c{req_text}|n")
+        
+        self.caller.msg("\n|w" + "=" * 80 + "|n")
+        self.caller.msg("|cUse |w+chargen/faction/info <faction>|c to see detailed requirements.|n")
+        self.caller.msg("|cUse |w+chargen/faction <faction>|c to set your faction.|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
+    
+    def _show_faction_info(self, faction_name):
+        """Show detailed information about a faction."""
+        faction = get_faction(faction_name)
+        
+        if not faction:
+            self.caller.msg(f"|rUnknown faction: {faction_name}|n")
+            self.caller.msg("Use |w+chargen/faction/list|n to see available factions.")
+            return
+        
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        self.caller.msg(f"|w{faction_name}|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        
+        if faction.get("description"):
+            self.caller.msg(f"\n|yDescription:|n {faction['description']}")
+        
+        mandatory_talents = faction.get("mandatory_talents", [])
+        if mandatory_talents:
+            self.caller.msg(f"\n|yMandatory Talents:|n")
+            note = faction.get("note", "")
+            if note:
+                self.caller.msg(f"|c{note}|n")
+            for talent in mandatory_talents:
+                self.caller.msg(f"  • {talent}")
+        else:
+            self.caller.msg(f"\n|yMandatory Talents:|n None")
+        
+        mandatory_focuses = faction.get("mandatory_focuses", [])
+        if mandatory_focuses:
+            self.caller.msg(f"\n|yMandatory Focuses:|n (Must have at least one)")
+            for focus in mandatory_focuses:
+                self.caller.msg(f"  • {focus}")
+        
+        self.caller.msg("\n|w" + "=" * 80 + "|n")
+        self.caller.msg(f"|cUse |w+chargen/faction {faction_name}|c to select this faction.|n")
+        self.caller.msg("|cNote: The system will validate you have the required talents/focuses.|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
+    
+    def _set_faction(self, faction_name):
+        """Set the character's faction and validate requirements."""
+        faction = get_faction(faction_name)
+        
+        if not faction:
+            self.caller.msg(f"|rUnknown faction: {faction_name}|n")
+            self.caller.msg("Use |w+chargen/faction/list|n to see available factions.")
+            return
+        
+        # Validate talents
+        talent_valid, talent_msg, missing_talents = validate_faction_talents(self.caller, faction_name)
+        
+        # Validate focuses
+        focus_valid, focus_msg, missing_focuses = validate_faction_focuses(self.caller, faction_name)
+        
+        # Check if requirements are met
+        if not talent_valid:
+            self.caller.msg(f"|rCannot set faction: {talent_msg}|n")
+            if missing_talents:
+                self.caller.msg(f"|yMissing talents:|n {', '.join(missing_talents)}")
+                self.caller.msg("|cUse |w+chargen/talents add <talent>|c or |w+stats/talent add=<talent>|c to add talents.|n")
+            return
+        
+        if not focus_valid:
+            self.caller.msg(f"|rCannot set faction: {focus_msg}|n")
+            if missing_focuses:
+                self.caller.msg(f"|yMissing focuses:|n {', '.join(missing_focuses)}")
+                self.caller.msg("|cUse |w+chargen/focuses add <skill>:<focus>|c or |w+stats/focus add=<focus>|c to add focuses.|n")
+            return
+        
+        # Set the faction
+        self.caller.db.faction = faction_name
+        self.caller.msg(f"|gFaction set to:|n {faction_name}")
+        self.caller.msg(f"|g{talent_msg}|n")
+        if focus_valid and missing_focuses == []:
+            self.caller.msg(f"|g{focus_msg}|n")
     
     def _set_archetype(self, archetype_name):
         """Set the character's archetype and initialize skills."""
@@ -152,6 +355,15 @@ class CmdChargen(MuxCommand):
         if not archetype:
             self.caller.msg(f"|rUnknown archetype: {archetype_name}|n")
             self.caller.msg("Use |w+chargen/list|n to see available archetypes.")
+            return
+        
+        # Check if character can take this archetype
+        can_take, reason = can_character_take_archetype(self.caller, archetype_name)
+        if not can_take:
+            self.caller.msg(f"|rCannot select archetype: {reason}|n")
+            required_faction = archetype.get("requires_faction", "")
+            if required_faction:
+                self.caller.msg(f"|cSet your faction first with: |w+chargen/faction {required_faction}|c|n")
             return
         
         # Store archetype information
@@ -283,7 +495,7 @@ class CmdChargen(MuxCommand):
             self.caller.msg("|wFOCUSES|n")
             self.caller.msg("|w" + "=" * 80 + "|n")
             self.caller.msg("|yYou need 4 focuses total.|n")
-            self.caller.msg("|yAt least one must be for your primary skill: {archetype['primary_skill']}|n")
+            self.caller.msg(f"|yAt least one must be for your primary skill: {archetype['primary_skill']}|n")
             
             if archetype.get("suggested_focuses"):
                 self.caller.msg(f"|ySuggested Focuses:|n {', '.join(archetype['suggested_focuses'])}")
@@ -361,6 +573,15 @@ class CmdChargen(MuxCommand):
             self.caller.add_focus(focus_entry)
             self.caller.msg(f"|gAdded focus: {focus_entry}|n")
             
+            # Check if faction requirements are now met
+            faction = self.caller.db.faction
+            if faction:
+                focus_valid, focus_msg, _ = validate_faction_focuses(self.caller, faction)
+                if focus_valid:
+                    self.caller.msg(f"|g✓ Faction requirements now met: {focus_msg}|n")
+                else:
+                    self.caller.msg(f"|yNote:|n {focus_msg}|n")
+            
             remaining = 4 - len(self.caller.db.stats.get("focuses", []))
             if remaining > 0:
                 self.caller.msg(f"|yFocuses remaining:|n {remaining}")
@@ -395,6 +616,7 @@ class CmdChargen(MuxCommand):
         
         archetype = self.caller.db.chargen_archetype
         current_talents = self.caller.db.stats.get("talents", [])
+        faction = self.caller.db.faction
         
         # Show current status
         if not self.args:
@@ -406,19 +628,240 @@ class CmdChargen(MuxCommand):
             if archetype.get("suggested_talents"):
                 self.caller.msg(f"|ySuggested Talent:|n {', '.join(archetype['suggested_talents'])}")
             
+            if faction:
+                faction_talents = get_talents_by_faction(faction)
+                if faction_talents:
+                    self.caller.msg(f"\n|yFaction Talents ({faction}):|n {', '.join(faction_talents[:10])}")
+                    if len(faction_talents) > 10:
+                        self.caller.msg(f"  ... and {len(faction_talents) - 10} more")
+            
             self.caller.msg(f"\n|yCurrent Talents ({len(current_talents)}/3):|n")
             if current_talents:
                 for talent in current_talents:
-                    self.caller.msg(f"  • {talent}")
+                    talent_data = get_talent(talent)
+                    if talent_data:
+                        category = talent_data.get("category", "General")
+                        param = talent_data.get("requires_parameter", "")
+                        display = talent
+                        if param:
+                            display += f" |c({param})|n"
+                        if category != "General":
+                            display += f" |m[{category}]|n"
+                        self.caller.msg(f"  • {display}")
+                    else:
+                        self.caller.msg(f"  • {talent}")
             else:
                 self.caller.msg("  None yet")
             
             self.caller.msg("\n|cUsage: |w+chargen/talents add <talent name>|c")
             self.caller.msg("|cExample: |w+chargen/talents add The Slow Blade|c")
+            self.caller.msg("|cFor talents requiring parameters: |w+chargen/talents add Bold (Battle)|c")
             self.caller.msg("|cYou can also use: |w+chargen/talents remove <talent>|c")
+            self.caller.msg("|cUse: |w+chargen/talents/list|c to see available talents|n")
+            self.caller.msg("|cUse: |w+chargen/talents/info <talent>|c to see talent details|n")
             self.caller.msg("|w" + "=" * 80 + "|n")
-            self.caller.msg("|yNote:|n A full list of talents will be provided later.|n")
             return
+        
+        # Handle list command
+        if self.args.strip().lower() == "list":
+            self._list_talents()
+            return
+        
+        # Handle info command
+        if self.args.strip().lower().startswith("info "):
+            talent_name = self.args.strip()[5:].strip()
+            self._show_talent_info(talent_name)
+            return
+        
+        # Parse arguments
+        parts = self.args.split(None, 1)
+        if len(parts) < 2:
+            self.caller.msg("|rUsage: +chargen/talents add <talent> OR +chargen/talents remove <talent>|n")
+            return
+        
+        action = parts[0].lower()
+        talent_input = parts[1].strip()
+        
+        if action == "add":
+            # Parse talent name and parameter if present
+            talent_name = talent_input
+            parameter = None
+            
+            # Check if parameter is in parentheses
+            if "(" in talent_input and ")" in talent_input:
+                import re
+                match = re.match(r"(.+?)\s*\((.+?)\)", talent_input)
+                if match:
+                    talent_name = match.group(1).strip()
+                    parameter = match.group(2).strip()
+            
+            # Validate talent exists
+            talent_data = get_talent(talent_name)
+            if not talent_data:
+                self.caller.msg(f"|rUnknown talent: {talent_name}|n")
+                self.caller.msg("|cUse |w+chargen/talents/list|c to see available talents.|n")
+                return
+            
+            # Check if character can take this talent
+            can_take, reason = can_character_take_talent(self.caller, talent_name)
+            if not can_take:
+                self.caller.msg(f"|rCannot take talent: {reason}|n")
+                return
+            
+            # Check if parameter is required
+            requires_param = talent_data.get("requires_parameter")
+            if requires_param and not parameter:
+                self.caller.msg(f"|rThis talent requires a {requires_param} parameter.|n")
+                if requires_param == "skill":
+                    self.caller.msg("|cUsage: |w+chargen/talents add {talent_name} (Battle)|c|n")
+                    self.caller.msg("|cSkills: Battle, Communicate, Discipline, Move, Understand|n")
+                elif requires_param == "drive":
+                    self.caller.msg("|cUsage: |w+chargen/talents add {talent_name} (Duty)|c|n")
+                    self.caller.msg("|cDrives: Duty, Faith, Justice, Power, Truth|n")
+                return
+            
+            # Format talent name with parameter if provided
+            if parameter:
+                talent_entry = f"{talent_name} ({parameter})"
+            else:
+                talent_entry = talent_name
+            
+            # Check if already have 3 talents
+            if len(current_talents) >= 3:
+                self.caller.msg("|rYou already have 3 talents. Remove one first if you want to change.|n")
+                return
+            
+            # Check for duplicates
+            if talent_entry in current_talents:
+                self.caller.msg(f"|rYou already have the talent '{talent_entry}'.|n")
+                return
+            
+            # Check for duplicate base talent (can't have same talent twice with different parameters)
+            for existing in current_talents:
+                if existing.startswith(talent_name + " (") or existing == talent_name:
+                    if not requires_param:
+                        self.caller.msg(f"|rYou already have the talent '{talent_name}'.|n")
+                        return
+            
+            self.caller.add_talent(talent_entry)
+            self.caller.msg(f"|gAdded talent: {talent_entry}|n")
+            
+            # Check if faction requirements are now met
+            if faction:
+                talent_valid, talent_msg, _ = validate_faction_talents(self.caller, faction)
+                if talent_valid:
+                    self.caller.msg(f"|g✓ Faction requirements now met: {talent_msg}|n")
+                else:
+                    self.caller.msg(f"|yNote:|n {talent_msg}|n")
+            
+            remaining = 3 - len(self.caller.db.stats.get("talents", []))
+            if remaining > 0:
+                self.caller.msg(f"|yTalents remaining:|n {remaining}")
+            else:
+                self.caller.msg("|yAll talents assigned!|n")
+                self.caller.msg("\n|cNext: Use |w+chargen/drives|c to set drives.|n")
+                
+        elif action == "remove":
+            if talent_input not in current_talents:
+                self.caller.msg(f"|rTalent '{talent_input}' not found.|n")
+                return
+            
+            self.caller.remove_talent(talent_input)
+            self.caller.msg(f"|gRemoved talent: {talent_input}|n")
+            
+            # Check if faction requirements are still met
+            if faction:
+                talent_valid, talent_msg, _ = validate_faction_talents(self.caller, faction)
+                if not talent_valid:
+                    self.caller.msg(f"|yWarning:|n {talent_msg}|n")
+        else:
+            self.caller.msg("|rAction must be 'add' or 'remove'.|n")
+    
+    def _list_talents(self):
+        """List available talents, organized by category."""
+        faction = self.caller.db.faction
+        
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        self.caller.msg("|w" + " AVAILABLE TALENTS".center(80) + "|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        
+        # Show general talents
+        general_talents = get_talents_by_category("General")
+        if general_talents:
+            self.caller.msg("\n|yGENERAL TALENTS:|n")
+            for talent_name in sorted(general_talents):
+                talent_data = TALENTS[talent_name]
+                param = talent_data.get("requires_parameter", "")
+                if param:
+                    self.caller.msg(f"  • |w{talent_name}|n |c({param})|n")
+                else:
+                    self.caller.msg(f"  • |w{talent_name}|n")
+        
+        # Show faction-specific talents if character has a faction
+        if faction:
+            faction_talents = get_talents_by_faction(faction)
+            if faction_talents:
+                self.caller.msg(f"\n|y{faction.upper()} TALENTS:|n")
+                for talent_name in sorted(faction_talents):
+                    talent_data = TALENTS[talent_name]
+                    param = talent_data.get("requires_parameter", "")
+                    if param:
+                        self.caller.msg(f"  • |w{talent_name}|n |c({param})|n")
+                    else:
+                        self.caller.msg(f"  • |w{talent_name}|n")
+        
+        # Show spice talents
+        spice_physical = get_talents_by_category("Spice (Physical)")
+        spice_mental = get_talents_by_category("Spice (Mental)")
+        if spice_physical or spice_mental:
+            self.caller.msg("\n|ySPICE TALENTS:|n")
+            self.caller.msg("|c(Requires spice consumption)|n")
+            for talent_name in sorted(spice_physical + spice_mental):
+                self.caller.msg(f"  • |w{talent_name}|n")
+        
+        self.caller.msg("\n|w" + "=" * 80 + "|n")
+        self.caller.msg("|cUse |w+chargen/talents/info <talent>|c to see detailed information.|n")
+        self.caller.msg("|cUse |w+chargen/talents add <talent>|c to add a talent.|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
+    
+    def _show_talent_info(self, talent_name):
+        """Show detailed information about a talent."""
+        talent_data = get_talent(talent_name)
+        
+        if not talent_data:
+            self.caller.msg(f"|rUnknown talent: {talent_name}|n")
+            self.caller.msg("Use |w+chargen/talents/list|n to see available talents.")
+            return
+        
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        self.caller.msg(f"|w{talent_name}|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        
+        category = talent_data.get("category", "General")
+        self.caller.msg(f"|yCategory:|n {category}")
+        
+        param = talent_data.get("requires_parameter", "")
+        if param:
+            self.caller.msg(f"|yRequires Parameter:|n {param}")
+            if param == "skill":
+                self.caller.msg(f"|cExample: |w+chargen/talents add {talent_name} (Battle)|c|n")
+            elif param == "drive":
+                self.caller.msg(f"|cExample: |w+chargen/talents add {talent_name} (Duty)|c|n")
+        
+        description = talent_data.get("description", "")
+        if description:
+            self.caller.msg(f"\n|yDescription:|n {description}")
+        
+        # Check if character can take this talent
+        can_take, reason = can_character_take_talent(self.caller, talent_name)
+        if can_take:
+            self.caller.msg(f"\n|g✓ {reason}|n")
+        else:
+            self.caller.msg(f"\n|r✗ {reason}|n")
+        
+        self.caller.msg("\n|w" + "=" * 80 + "|n")
+        self.caller.msg(f"|cUse |w+chargen/talents add {talent_name}|c to select this talent.|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
         
         # Parse arguments
         parts = self.args.split(None, 1)
@@ -440,6 +883,15 @@ class CmdChargen(MuxCommand):
             
             self.caller.add_talent(talent_name)
             self.caller.msg(f"|gAdded talent: {talent_name}|n")
+            
+            # Check if faction requirements are now met
+            faction = self.caller.db.faction
+            if faction:
+                talent_valid, talent_msg, _ = validate_faction_talents(self.caller, faction)
+                if talent_valid:
+                    self.caller.msg(f"|g✓ Faction requirements now met: {talent_msg}|n")
+                else:
+                    self.caller.msg(f"|yNote:|n {talent_msg}|n")
             
             remaining = 3 - len(self.caller.db.stats.get("talents", []))
             if remaining > 0:
@@ -646,6 +1098,33 @@ class CmdChargen(MuxCommand):
             self.caller.msg(f"|r[ ]|n Step 2: Archetype - Not selected")
             self.caller.msg("     |cUse |w+chargen/archetype <name>|c|n")
         
+        # Caste
+        caste = self.caller.db.caste
+        if caste:
+            self.caller.msg(f"|g[✓]|n Caste - |w{caste}|n")
+        else:
+            self.caller.msg(f"|y[~]|n Caste - Not set (optional)")
+            self.caller.msg("     |cUse |w+chargen/caste <caste>|c (Na-Familia, Bondsman, Pyon)|n")
+        
+        # Faction
+        faction = self.caller.db.faction
+        if faction:
+            # Validate faction requirements
+            talent_valid, talent_msg, _ = validate_faction_talents(self.caller, faction)
+            focus_valid, focus_msg, _ = validate_faction_focuses(self.caller, faction)
+            
+            if talent_valid and focus_valid:
+                self.caller.msg(f"|g[✓]|n Faction - |w{faction}|n (requirements met)")
+            else:
+                self.caller.msg(f"|y[~]|n Faction - |w{faction}|n (requirements not met)")
+                if not talent_valid:
+                    self.caller.msg(f"     |r{talent_msg}|n")
+                if not focus_valid:
+                    self.caller.msg(f"     |r{focus_msg}|n")
+        else:
+            self.caller.msg(f"|y[~]|n Faction - Not set (optional)")
+            self.caller.msg("     |cUse |w+chargen/faction/list|c to see factions|n")
+        
         # Step 3: Skills
         skill_points = self.caller.db.chargen_skill_points
         if skill_points is not None:
@@ -745,6 +1224,8 @@ class CmdChargen(MuxCommand):
         self.caller.msg("\n|cQuick Commands:|n")
         self.caller.msg("  |w+chargen/list|c - List archetypes")
         self.caller.msg("  |w+chargen/info <archetype>|c - Archetype details")
+        self.caller.msg("  |w+chargen/caste <caste>|c - Set caste")
+        self.caller.msg("  |w+chargen/faction/list|c - List factions")
         self.caller.msg("  |w+chargen/status|c - Show this status")
         self.caller.msg("  |w+bio|c - Finishing touches (Step 8)")
 

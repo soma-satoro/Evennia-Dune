@@ -1,0 +1,40 @@
+CHARACTER CREATION GUIDE
+========================
+
+STEP 1: Check status with: +chargen/status
+
+STEP 2: Choose archetype
++chargen/list (see options)
++chargen/info <archetype> (details)
++chargen/archetype <name> (select)
+Optional: +chargen/caste <caste> | +chargen/faction/list
+
+STEP 3: Assign 5 skill points (max skill 8)
++chargen/skills <skill>=<points>
+Example: +chargen/skills battle=2
+Skills: Battle, Communicate, Discipline, Move, Understand
+
+STEP 4: Add 4 focuses (one must be primary skill)
++chargen/focuses add <skill>:<focus>
+Example: +chargen/focuses add Battle:Short Blades
+
+STEP 5: Add 3 talents
++chargen/talents/list (see options)
++chargen/talents add <talent>
+Example: +chargen/talents add The Slow Blade
+For parameters: +chargen/talents add Bold (Battle)
+
+STEP 6: Set drives (ratings: 8, 7, 6, 5, 4)
++chargen/drives set <drive>=<rating>
+Example: +chargen/drives set duty=8
+Drives 6+ need statements: +chargen/drives statement <drive>=<text>
+Drives: Duty, Faith, Justice, Power, Truth
+
+STEP 7: Create 3 assets (one must be tangible)
++asset/list | +asset/create <name>
+
+STEP 8: Finishing touches
++bio (set personality, ambition, description)
+
+Check progress: +chargen/status
+

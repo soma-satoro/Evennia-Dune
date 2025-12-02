@@ -156,6 +156,31 @@ class CmdSheet(MuxCommand):
         
         # If /full switch is used, also display background and bio info
         if "full" in self.switches:
+            # Show caste and faction
+            caste = target.db.caste
+            faction = target.db.faction
+            if caste or faction:
+                self.caller.msg(f"\n|y{'CASTE & FACTION':-^78}|n")
+                if caste:
+                    self.caller.msg(f"|wCaste:|n {caste}")
+                if faction:
+                    self.caller.msg(f"|wFaction:|n {faction}")
+                    # Show faction requirements
+                    from typeclasses.factions import get_faction, validate_faction_talents, validate_faction_focuses
+                    faction_data = get_faction(faction)
+                    if faction_data:
+                        mandatory_talents = faction_data.get("mandatory_talents", [])
+                        mandatory_focuses = faction_data.get("mandatory_focuses", [])
+                        if mandatory_talents:
+                            talent_valid, _, _ = validate_faction_talents(target, faction)
+                            status = "|g✓|n" if talent_valid else "|r✗|n"
+                            self.caller.msg(f"|wRequired Talents:|n {status} {', '.join(mandatory_talents)}")
+                        if mandatory_focuses:
+                            focus_valid, _, _ = validate_faction_focuses(target, faction)
+                            status = "|g✓|n" if focus_valid else "|r✗|n"
+                            self.caller.msg(f"|wRequired Focuses:|n {status} {', '.join(mandatory_focuses)}")
+                self.caller.msg("|w" + "=" * 78 + "|n")
+            
             # Show archetype info
             archetype = target.db.chargen_archetype
             if archetype:
@@ -435,9 +460,27 @@ class CmdStats(MuxCommand):
             
             target.add_focus(focus_name)
             self.caller.msg(f"|gAdded focus:|n {focus_name}")
+            
+            # Check if faction requirements are now met
+            faction = target.db.faction
+            if faction:
+                from typeclasses.factions import validate_faction_focuses
+                focus_valid, focus_msg, _ = validate_faction_focuses(target, faction)
+                if focus_valid:
+                    self.caller.msg(f"|g✓ Faction requirements now met: {focus_msg}|n")
+                else:
+                    self.caller.msg(f"|yNote:|n {focus_msg}|n")
         elif action == "rem" or action == "remove":
             if target.remove_focus(focus_name):
                 self.caller.msg(f"|gRemoved focus:|n {focus_name}")
+                
+                # Check if faction requirements are still met
+                faction = target.db.faction
+                if faction:
+                    from typeclasses.factions import validate_faction_focuses
+                    focus_valid, focus_msg, _ = validate_faction_focuses(target, faction)
+                    if not focus_valid:
+                        self.caller.msg(f"|yWarning:|n {focus_msg}|n")
             else:
                 self.caller.msg(f"|rYou don't have that focus.|n")
         else:
@@ -504,11 +547,36 @@ class CmdStats(MuxCommand):
         talent_name = parts[1].strip()
         
         if action == "add":
+            # Validate faction restrictions
+            from typeclasses.talents import can_character_take_talent
+            can_take, reason = can_character_take_talent(target, talent_name)
+            if not can_take:
+                self.caller.msg(f"|rCannot add talent: {reason}|n")
+                return
+            
             target.add_trait(talent_name)
             self.caller.msg(f"Added talent: {talent_name}")
+            
+            # Check if faction requirements are now met
+            faction = target.db.faction
+            if faction:
+                from typeclasses.factions import validate_faction_talents
+                talent_valid, talent_msg, _ = validate_faction_talents(target, faction)
+                if talent_valid:
+                    self.caller.msg(f"|g✓ Faction requirements now met: {talent_msg}|n")
+                else:
+                    self.caller.msg(f"|yNote:|n {talent_msg}|n")
         elif action == "rem" or action == "remove":
             if target.remove_trait(talent_name):
                 self.caller.msg(f"Removed talent: {talent_name}")
+                
+                # Check if faction requirements are still met
+                faction = target.db.faction
+                if faction:
+                    from typeclasses.factions import validate_faction_talents
+                    talent_valid, talent_msg, _ = validate_faction_talents(target, faction)
+                    if not talent_valid:
+                        self.caller.msg(f"|yWarning:|n {talent_msg}|n")
             else:
                 self.caller.msg(f"You don't have that talent.")
         else:

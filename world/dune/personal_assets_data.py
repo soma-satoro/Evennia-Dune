@@ -2,7 +2,7 @@
 Personal Assets Data
 
 This module defines all Personal Assets available in Dune.
-These can be used to create Asset objects with the correct properties.
+Asset data is stored separately from typeclass logic.
 """
 
 # Personal Assets organized by category
@@ -276,53 +276,4 @@ PERSONAL_ASSETS = {
         "special": "As an Asset: The thumper is useful in calling or distracting sandworms. The device can be used to cause mass destruction by having the sandworm appear in an area."
     }
 }
-
-
-def create_personal_asset(asset_name, character=None):
-    """
-    Create a Personal Asset object.
-    
-    Args:
-        asset_name (str): Name of the asset to create
-        character (Character, optional): Character to give the asset to
-        
-    Returns:
-        Asset: The created Asset object, or None if asset_name not found
-    """
-    from evennia import create_object
-    from typeclasses.assets import Asset
-    
-    if asset_name not in PERSONAL_ASSETS:
-        return None
-    
-    asset_data = PERSONAL_ASSETS[asset_name]
-    
-    # Create the asset object
-    asset = create_object(
-        Asset,
-        key=asset_name,
-        location=character if character else None
-    )
-    
-    # Set asset properties
-    asset.set_asset_type(asset_data["asset_type"])
-    asset.set_quality(asset_data["quality"])
-    asset.set_description(asset_data["description"])
-    asset.set_special(asset_data["special"])
-    
-    # Add keywords
-    for keyword in asset_data["keywords"]:
-        asset.add_keyword(keyword)
-    
-    return asset
-
-
-def get_all_personal_asset_names():
-    """
-    Get a list of all Personal Asset names.
-    
-    Returns:
-        list: List of asset names
-    """
-    return sorted(PERSONAL_ASSETS.keys())
 

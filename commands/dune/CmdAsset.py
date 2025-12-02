@@ -5,14 +5,21 @@ Command to create and manage assets for characters.
 """
 
 from evennia.commands.default.muxcommand import MuxCommand
-from typeclasses.personal_assets import PERSONAL_ASSETS, create_personal_asset, get_all_personal_asset_names
-from typeclasses.warfare_assets import WARFARE_ASSETS, create_warfare_asset, get_all_warfare_asset_names
-from typeclasses.espionage_assets import ESPIONAGE_ASSETS, create_espionage_asset, get_all_espionage_asset_names
-from typeclasses.intrigue_assets import INTRIGUE_ASSETS, create_intrigue_asset, get_all_intrigue_asset_names
-
-
-# Combined asset dictionaries for lookup
-ALL_ASSETS = {**PERSONAL_ASSETS, **WARFARE_ASSETS, **ESPIONAGE_ASSETS, **INTRIGUE_ASSETS}
+from typeclasses.assets import (
+    PERSONAL_ASSETS,
+    WARFARE_ASSETS,
+    ESPIONAGE_ASSETS,
+    INTRIGUE_ASSETS,
+    ALL_ASSETS,
+    create_personal_asset,
+    create_warfare_asset,
+    create_espionage_asset,
+    create_intrigue_asset,
+    get_all_personal_asset_names,
+    get_all_warfare_asset_names,
+    get_all_espionage_asset_names,
+    get_all_intrigue_asset_names,
+)
 
 
 class CmdAsset(MuxCommand):
@@ -25,12 +32,22 @@ class CmdAsset(MuxCommand):
         +asset/info <asset name> - Show information about an asset
         +asset/quality <asset name>=<quality> - Set quality of an asset in your inventory
         +asset/quality <character>/<asset name>=<quality> - Set quality of another's asset (staff only)
+        +asset/architect - List your architect-capable assets (can be used remotely)
+        +asset/agent - List your agent-mode assets (require direct presence)
+        +asset/mode [agent|architect] - Show or set your playstyle mode
     
     Switches:
         /create - Create an asset and add it to your inventory
         /list - List all available Assets (optionally filter by type)
         /info - Show detailed information about an asset
         /quality - Set quality of an asset (0-5, or "Special")
+        /architect - List assets usable in Architect mode (remote action)
+        /agent - List assets usable in Agent mode (direct presence)
+        /mode - Show or set playstyle mode (agent or architect)
+    
+    Playstyle Modes:
+        Agent: Direct action requiring personal presence (e.g., using a gun, fighting directly)
+        Architect: Remote action using assets from a distance (e.g., sending soldiers, anonymous blackmail)
     
     Examples:
         +asset/create Lasgun - Create a Lasgun and add it to inventory
@@ -42,6 +59,11 @@ class CmdAsset(MuxCommand):
         +asset/quality Lasgun=3 - Set Lasgun quality to 3
         +asset/quality Ridulian Crystal=Special - Set Ridulian Crystal quality to Special
         +asset/quality Paul/Lasgun=4 - Set Paul's Lasgun quality to 4 (staff only)
+        +asset/architect - List your architect-capable assets
+        +asset/agent - List your agent-mode assets
+        +asset/mode - Show current playstyle mode
+        +asset/mode architect - Switch to Architect mode
+        +asset/mode agent - Switch to Agent mode
     """
     
     key = "+asset"
@@ -50,6 +72,21 @@ class CmdAsset(MuxCommand):
     
     def func(self):
         """Handle asset commands"""
+        
+        # Handle playstyle mode
+        if "mode" in self.switches:
+            self._handle_playstyle_mode()
+            return
+        
+        # List architect-capable assets
+        if "architect" in self.switches:
+            self._list_architect_assets()
+            return
+        
+        # List agent-mode assets
+        if "agent" in self.switches:
+            self._list_agent_assets()
+            return
         
         if not self.args and "list" not in self.switches:
             self.caller.msg("Usage: +asset/create <asset name> | +asset/list [Personal|Warfare|Espionage|Intrigue] | +asset/info <asset name> | +asset/quality <asset name>=<quality>")
@@ -403,3 +440,113 @@ class CmdAsset(MuxCommand):
                 target_character.msg(f"|y{self.caller.name} set your {asset_name} quality to {quality_display}.|n")
         else:
             self.caller.msg(f"|rFailed to set quality. Quality must be 0-5 or 'Special'.|n")
+    
+    def _handle_playstyle_mode(self):
+        """Show or set playstyle mode"""
+        if not self.args:
+            # Show current mode
+            current_mode = self.caller.get_playstyle_mode()
+            mode_display = "|cArchitect|n" if current_mode == "architect" else "|mAgent|n"
+            self.caller.msg("|w" + "=" * 80 + "|n")
+            self.caller.msg(f"|wCurrent Playstyle Mode:|n {mode_display}")
+            self.caller.msg("")
+            self.caller.msg("|yAgent Mode:|n Direct action requiring personal presence")
+            self.caller.msg("  Example: Using a gun, fighting directly, personal interaction")
+            self.caller.msg("")
+            self.caller.msg("|yArchitect Mode:|n Remote action using assets from a distance")
+            self.caller.msg("  Example: Sending a squad of soldiers, anonymous blackmail letter")
+            self.caller.msg("")
+            self.caller.msg("Use |w+asset/mode <agent|architect>|n to change your playstyle mode.")
+            self.caller.msg("|w" + "=" * 80 + "|n")
+            return
+        
+        # Set mode
+        mode = self.args.strip().lower()
+        if mode not in ["agent", "architect"]:
+            self.caller.msg("|rInvalid mode. Must be 'agent' or 'architect'.|n")
+            return
+        
+        if self.caller.set_playstyle_mode(mode):
+            mode_display = "|cArchitect|n" if mode == "architect" else "|mAgent|n"
+            self.caller.msg(f"|gPlaystyle mode set to {mode_display}|n")
+        else:
+            self.caller.msg("|rFailed to set playstyle mode.|n")
+    
+    def _list_architect_assets(self):
+        """List assets that can be used in Architect mode (remotely)"""
+        assets = self.caller.get_architect_capable_assets()
+        
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        self.caller.msg("|wARCHITECT-CAPABLE ASSETS|n".center(80))
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        self.caller.msg("|yThese assets can be used remotely (Architect mode):|n")
+        self.caller.msg("")
+        
+        if not assets:
+            self.caller.msg("  |yYou have no architect-capable assets.|n")
+            self.caller.msg("  |cArchitect-capable assets include:|n")
+            self.caller.msg("    - Warfare assets (soldiers, vehicles, fortresses)")
+            self.caller.msg("    - Espionage assets (intelligence, anonymous methods)")
+            self.caller.msg("    - Intrigue assets (favors, debts, blackmail)")
+        else:
+            # Group by type
+            by_type = {}
+            for asset in assets:
+                asset_type = asset.get_asset_type()
+                if asset_type not in by_type:
+                    by_type[asset_type] = []
+                by_type[asset_type].append(asset)
+            
+            for asset_type in ["Warfare", "Espionage", "Intrigue"]:
+                if asset_type in by_type:
+                    self.caller.msg(f"|w{asset_type} Assets:|n")
+                    for asset in sorted(by_type[asset_type], key=lambda x: x.name):
+                        quality = asset.get_quality()
+                        quality_str = "Special" if quality == "Special" else str(quality)
+                        self.caller.msg(f"  • |w{asset.name}|n (Quality: {quality_str})")
+                    self.caller.msg("")
+        
+        current_mode = self.caller.get_playstyle_mode()
+        if current_mode != "architect":
+            self.caller.msg(f"|yNote:|n Your current playstyle mode is |m{current_mode.capitalize()}|n.")
+            self.caller.msg("Use |w+asset/mode architect|n to switch to Architect mode.")
+        
+        self.caller.msg("|w" + "=" * 80 + "|n")
+    
+    def _list_agent_assets(self):
+        """List assets that require direct presence (Agent mode)"""
+        assets = self.caller.get_agent_mode_assets()
+        
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        self.caller.msg("|wAGENT-MODE ASSETS|n".center(80))
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        self.caller.msg("|yThese assets require direct presence (Agent mode):|n")
+        self.caller.msg("")
+        
+        if not assets:
+            self.caller.msg("  |yYou have no agent-mode assets.|n")
+            self.caller.msg("  |cAgent-mode assets are typically Personal assets like weapons.|n")
+        else:
+            # Group by type
+            by_type = {}
+            for asset in assets:
+                asset_type = asset.get_asset_type()
+                if asset_type not in by_type:
+                    by_type[asset_type] = []
+                by_type[asset_type].append(asset)
+            
+            for asset_type in ["Personal", "Espionage"]:
+                if asset_type in by_type:
+                    self.caller.msg(f"|w{asset_type} Assets:|n")
+                    for asset in sorted(by_type[asset_type], key=lambda x: x.name):
+                        quality = asset.get_quality()
+                        quality_str = "Special" if quality == "Special" else str(quality)
+                        self.caller.msg(f"  • |w{asset.name}|n (Quality: {quality_str})")
+                    self.caller.msg("")
+        
+        current_mode = self.caller.get_playstyle_mode()
+        if current_mode != "agent":
+            self.caller.msg(f"|yNote:|n Your current playstyle mode is |c{current_mode.capitalize()}|n.")
+            self.caller.msg("Use |w+asset/mode agent|n to switch to Agent mode.")
+        
+        self.caller.msg("|w" + "=" * 80 + "|n")
