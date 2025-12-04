@@ -1,0 +1,32 @@
+#
+# Batch Command File for Creating Roster Characters
+# Children of Dune Era
+#
+# To use this file:
+# @batchcommand world.batch_roster_characters
+#
+# This will create all roster characters with basic setup.
+# For full stats and detailed configuration, use:
+# @py world.dune.roster_characters.create_all_roster()
+#
+
+#HEADER
+
+# This batch file creates the major roster characters for the Children of Dune era.
+# These are feature characters that can be played or used as major NPCs.
+
+#CODE
+
+# Import the roster character creation module
+from world.dune import roster_characters
+
+# Create all roster characters with full stats
+characters = roster_characters.create_all_roster()
+
+# Report success
+if characters:
+    caller.msg(f"|gSuccessfully created {len(characters)} roster characters!|n")
+    caller.msg("|wUse +sheet <character name> to view their details.|n")
+else:
+    caller.msg("|rFailed to create roster characters. Check logs for errors.|n")
+
