@@ -199,7 +199,8 @@ class Room(ObjectParent, DefaultRoom):
         """
         Get the characters section with idle times and shortdesc.
         
-        Format: Name                     IdleTime Description
+        Format: Name.......................IdleTime
+                  -Shortdesc (if present)
         """
         # Get all characters in the room (including the looker)
         characters = [obj for obj in self.contents if obj.has_account]
@@ -213,31 +214,26 @@ class Room(ObjectParent, DefaultRoom):
         char_lines = []
         char_lines.append(f"|{divider_color}----> Characters <" + "-" * 62 + "|n")
         
-        # Display characters in two columns with dot leaders
-        for i in range(0, len(characters), 2):
-            left_char = characters[i]
-            right_char = characters[i + 1] if i + 1 < len(characters) else None
+        # Display each character with name, idle time, and shortdesc
+        for char in characters:
+            # Get character display info
+            char_name = char.get_display_name(looker)
+            char_idle = self.get_character_idle_time(char)
+            char_shortdesc = getattr(char.db, 'shortdesc', None)
             
-            # Left column
-            left_name = left_char.get_display_name(looker)
-            left_idle = self.get_character_idle_time(left_char)
-            # Create dot leader between name and idle time (total width 28 chars)
-            left_dots = "." * (35 - len(left_name) - len(left_idle))
-            left_text = f"{left_name}{left_dots}{left_idle}"
+            # Create dot leader between name and idle time (targeting ~40 chars total for the line)
+            name_idle_width = 40
+            dots_needed = name_idle_width - len(char_name) - len(char_idle)
+            if dots_needed < 1:
+                dots_needed = 1
+            char_dots = "." * dots_needed
+            char_line = f"{char_name}{char_dots}{char_idle}"
+            char_lines.append(char_line)
             
-            # Right column (if exists)
-            if right_char:
-                right_name = right_char.get_display_name(looker)
-                right_idle = self.get_character_idle_time(right_char)
-                # Create dot leader between name and idle time (total width 28 chars)
-                right_dots = "." * (35 - len(right_name) - len(right_idle))
-                right_text = f"{right_name}{right_dots}{right_idle}"
-            else:
-                right_text = ""
-            
-            # Combine columns with proper spacing (left column is 39 chars total)
-            line = f"{left_text:<39} {right_text}"
-            char_lines.append(line.rstrip())
+            # Add shortdesc on the next line if it exists
+            if char_shortdesc and char_shortdesc.strip():
+                # Indent the shortdesc slightly for visual hierarchy
+                char_lines.append(f"  -{char_shortdesc}")
             
         return "\n" + "\n".join(char_lines)
 
