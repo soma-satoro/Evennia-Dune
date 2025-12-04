@@ -159,6 +159,9 @@ class House(DefaultObject):
         self.db.banner_colors = []  # e.g., ["White", "Red"]
         self.db.crest = ""  # e.g., "Scroll"
         
+        # House Quote
+        self.db.quote = ""  # A memorable quote or motto for the House
+        
         # House Traits
         self.db.traits = []  # List of trait names
         
@@ -1313,6 +1316,10 @@ class House(DefaultObject):
             crest = self.db.crest if self.db.crest else "Not set"
             output.append(f"\n|wBanner Colors:|n {colors}")
             output.append(f"|wCrest:|n {crest}")
+        
+        # Quote
+        if self.db.quote:
+            output.append(f"\n|wQuote:|n \"{self.db.quote}\"")
         
         # Traits
         if self.db.traits:

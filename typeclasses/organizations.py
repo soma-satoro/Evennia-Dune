@@ -63,6 +63,7 @@ class Organization(House):
         self.db.leadership_structure = ""  # How the org is structured
         self.db.requirements = ""  # Requirements for membership
         self.db.benefits = ""  # Benefits of membership
+        self.db.quote = ""  # A memorable quote or motto for the Organization
         
         # Multiple characters can belong to multiple organizations
         self.db.allow_multiple = True  # Can belong to org AND a House
@@ -157,6 +158,10 @@ class Organization(House):
         
         # Organization Type
         output.append(f"\n|wType:|n {self.get_org_type_display()}")
+        
+        # Quote
+        if self.db.quote:
+            output.append(f"\n|wQuote:|n \"{self.db.quote}\"")
         
         # Headquarters
         if self.db.headquarters:

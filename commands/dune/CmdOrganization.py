@@ -19,6 +19,7 @@ class CmdOrg(MuxCommand):
         +org/create <name>=<type> | +org/destroy <name> (staff only)
         +org/set <org>/type=<type> | +org/set <org>/trait=<trait> | +org/set <org>/headquarters=<loc> (staff only)
         +org/set <org>/leadership=<text> | +org/set <org>/requirements=<text> | +org/set <org>/benefits=<text> (staff only)
+        +org/set <org>/quote=<text> (staff only)
         +org/set <org>/curriculum=<skill> (schools) | +org/set <org>/industry=<text> (guilds) | +org/set <org>/philosophy=<text> (orders) | +org/set <org>/goals=<text> (factions) (staff only)
         +org/role <org>/list | +org/role <org>/set <role>=<name>[:<desc>][:<traits>] | +org/role <org>/remove <role> (staff only)
 
@@ -252,6 +253,10 @@ class CmdOrg(MuxCommand):
         elif property_name == "benefits":
             org.db.benefits = value
             self.caller.msg(f"Set {org.key} membership benefits.")
+            
+        elif property_name == "quote":
+            org.db.quote = value
+            self.caller.msg(f"Set {org.key} quote to: \"{value}\"")
             
         elif property_name == "curriculum":
             if org.db.org_type != "school":

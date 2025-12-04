@@ -32,6 +32,7 @@ class CmdHouse(MuxCommand):
         +house/set <house>/crime=<text>   - Set crime rate (staff only)
         +house/set <house>/populace=<text> - Set populace mood (staff only)
         +house/set <house>/wealth=<text>  - Set wealth distribution (staff only)
+        +house/set <house>/quote=<text>  - Set House quote/motto (staff only)
         +house/skill <house>/values       - Show default skill values (staff only)
         +house/skill <house>/set <skill>=<value> - Set individual skill (staff only)
         +house/skill <house>/init=<b>,<c>,<d>,<m>,<u> - Initialize all skills (staff only)
@@ -324,6 +325,10 @@ class CmdHouse(MuxCommand):
         elif property_name == "wealth":
             house.db.wealth_distribution = value
             self.caller.msg(f"Set {house.key} wealth distribution to: {value}")
+            
+        elif property_name == "quote":
+            house.db.quote = value
+            self.caller.msg(f"Set {house.key} quote to: \"{value}\"")
             
         else:
             self.caller.msg(f"Unknown property '{property_name}'. See 'help +house' for available properties.")
