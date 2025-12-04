@@ -8,6 +8,7 @@ from evennia.commands.default.muxcommand import MuxCommand
 from typeclasses.archetypes import ARCHETYPES, get_archetype, get_all_archetype_names, list_archetypes_by_category, get_archetypes_by_faction, can_character_take_archetype
 from typeclasses.factions import CASTES, FACTIONS, get_faction, get_all_faction_names, validate_faction_talents, validate_faction_focuses
 from typeclasses.talents import TALENTS, get_talent, get_talents_by_category, get_talents_by_faction, can_character_take_talent, get_all_talent_names
+from typeclasses.titles import TITLES, get_title, get_title_by_name, get_all_titles, get_titles_by_category, get_title_display_name, get_architect_access_for_title
 from commands.dune.CmdSheet import DUNE_FOCUSES
 
 
@@ -20,6 +21,9 @@ class CmdChargen(MuxCommand):
         +chargen/info <archetype> - Show information about an archetype
         +chargen/archetype <archetype> - Choose your archetype (Step 2)
         +chargen/caste <caste> - Set your caste (Na-Familia, Bondsman, Pyon)
+        +chargen/title <title> - Set your noble title (optional)
+        +chargen/title/list - List all available titles
+        +chargen/title/info <title> - Show title information
         +chargen/faction <faction> - Set your faction (validates requirements)
         +chargen/faction/list - List all available factions
         +chargen/faction/info <faction> - Show faction requirements
@@ -33,7 +37,8 @@ class CmdChargen(MuxCommand):
     Steps:
         2. Choose an archetype
         2a. Set caste (Na-Familia, Bondsman, Pyon)
-        2b. Set faction (optional, validates mandatory talents/focuses)
+        2b. Set title (optional, for noble characters)
+        2c. Set faction (optional, validates mandatory talents/focuses)
         3. Set skills (primary 6, secondary 5, others 4, then add 5 points max 8)
         4. Choose 4 focuses (at least one for primary skill)
         5. Choose 3 talents (faction characters must pick mandatory talents)
@@ -74,6 +79,22 @@ class CmdChargen(MuxCommand):
                 self.caller.msg("Valid castes: Na-Familia, Bondsman, Pyon")
                 return
             self._set_caste(self.args.strip())
+            return
+        
+        if "title" in self.switches:
+            if not self.args:
+                if "list" in self.switches:
+                    self._list_titles()
+                    return
+                self.caller.msg("Usage: +chargen/title <title> | +chargen/title/list | +chargen/title/info <title>")
+                return
+            if "info" in self.switches:
+                self._show_title_info(self.args.strip())
+                return
+            if "list" in self.switches:
+                self._list_titles()
+                return
+            self._set_title(self.args.strip())
             return
         
         if "faction" in self.switches:
@@ -232,6 +253,132 @@ class CmdChargen(MuxCommand):
             self.caller.msg("|cFree individuals who are allowed to own small amounts of land and property, the middle class.|n")
         elif valid_caste == "Pyon":
             self.caller.msg("|cLowest classes, often employed as hard laborers.|n")
+    
+    def _list_titles(self):
+        """List all available titles organized by category."""
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        self.caller.msg("|w" + " AVAILABLE TITLES".center(80) + "|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        
+        # Get character's gender if set (default to masculine)
+        gender = getattr(self.caller.db, 'gender', 'masculine')
+        if gender not in ['masculine', 'feminine']:
+            gender = 'masculine'
+        
+        categories = ["Singular", "Major", "Noble", "Minor", "Lesser"]
+        for category in categories:
+            title_keys = get_titles_by_category(category)
+            if not title_keys:
+                continue
+            
+            self.caller.msg(f"\n|y{category.upper()} TITLES:|n")
+            for title_key in sorted(title_keys):
+                title = TITLES[title_key]
+                display_name = get_title_display_name(title_key, gender)
+                hereditary = "|g[Hereditary]|n" if title["hereditary"] else "|m[Non-Hereditary]|n"
+                architect = title["architect_access"]
+                if architect == "full":
+                    architect_display = "|g[Full Architect]|n"
+                elif architect == "limited":
+                    architect_display = "|y[Limited Architect]|n"
+                else:
+                    architect_display = "|m[Roleplay Only]|n"
+                
+                self.caller.msg(f"  |w{display_name:<20}|n {hereditary} {architect_display}")
+        
+        self.caller.msg("\n|w" + "=" * 80 + "|n")
+        self.caller.msg("|cUse |w+chargen/title/info <title>|c to see detailed information.|n")
+        self.caller.msg("|cUse |w+chargen/title <title>|c to set your title.|n")
+        self.caller.msg("|yNote:|n Titles are generally for Na-Familia caste, but exceptions exist.|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
+    
+    def _show_title_info(self, title_name):
+        """Show detailed information about a title."""
+        # Try to find the title
+        title_key, title = get_title_by_name(title_name)
+        
+        if not title:
+            self.caller.msg(f"|rUnknown title: {title_name}|n")
+            self.caller.msg("Use |w+chargen/title/list|n to see available titles.")
+            return
+        
+        # Get character's gender if set
+        gender = getattr(self.caller.db, 'gender', 'masculine')
+        if gender not in ['masculine', 'feminine']:
+            gender = 'masculine'
+        
+        display_name = get_title_display_name(title_key, gender)
+        
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        self.caller.msg(f"|w{display_name}|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
+        
+        self.caller.msg(f"|yCategory:|n {title['category']}")
+        self.caller.msg(f"|yHereditary:|n {'Yes' if title['hereditary'] else 'No'}")
+        self.caller.msg(f"|yHierarchy Level:|n {title['hierarchy_level']}")
+        
+        architect = title['architect_access']
+        if architect == "full":
+            architect_display = "|gFull Architect Access|n - Can use all architect capabilities"
+        elif architect == "limited":
+            architect_display = "|yLimited Architect Access|n - Can use lower-level architect options"
+        else:
+            architect_display = "|mRoleplay Only|n - Primarily for background and roleplay"
+        
+        self.caller.msg(f"|yArchitect Access:|n {architect_display}")
+        
+        if title.get("description"):
+            self.caller.msg(f"\n|yDescription:|n {title['description']}")
+        
+        # Show both forms
+        if title['masculine'] != title['feminine']:
+            self.caller.msg(f"\n|yForms:|n {title['masculine']} / {title['feminine']}")
+        
+        self.caller.msg("\n|w" + "=" * 80 + "|n")
+        self.caller.msg(f"|cUse |w+chargen/title {display_name}|c to select this title.|n")
+        self.caller.msg("|w" + "=" * 80 + "|n")
+    
+    def _set_title(self, title_name):
+        """Set the character's title."""
+        # Try to find the title
+        title_key, title = get_title_by_name(title_name)
+        
+        if not title:
+            self.caller.msg(f"|rUnknown title: {title_name}|n")
+            self.caller.msg("Use |w+chargen/title/list|n to see available titles.")
+            return
+        
+        # Get character's gender if set
+        gender = getattr(self.caller.db, 'gender', 'masculine')
+        if gender not in ['masculine', 'feminine']:
+            gender = 'masculine'
+        
+        display_name = get_title_display_name(title_key, gender)
+        
+        # Store both the key and display name
+        self.caller.db.title = title_key
+        self.caller.db.title_display = display_name
+        
+        self.caller.msg(f"|gTitle set to:|n {display_name}")
+        
+        # Show information about the title
+        architect = title['architect_access']
+        if architect == "full":
+            self.caller.msg("|gFull Architect Access|n - You can use all architect capabilities.")
+        elif architect == "limited":
+            self.caller.msg("|yLimited Architect Access|n - You can use lower-level architect options.")
+        else:
+            self.caller.msg("|cRoleplay Only|n - This title is primarily for background and roleplay.")
+        
+        if title['hereditary']:
+            self.caller.msg("|cThis is a hereditary title.|n")
+        else:
+            self.caller.msg("|cThis is a non-hereditary title, typically awarded for service.|n")
+        
+        # Note about caste
+        caste = self.caller.db.caste
+        if caste != "Na-Familia":
+            self.caller.msg("|yNote:|n Titles are generally for Na-Familia caste, but exceptions exist.|n")
     
     def _list_factions(self):
         """List all available factions."""
@@ -1106,6 +1253,29 @@ class CmdChargen(MuxCommand):
             self.caller.msg(f"|y[~]|n Caste - Not set (optional)")
             self.caller.msg("     |cUse |w+chargen/caste <caste>|c (Na-Familia, Bondsman, Pyon)|n")
         
+        # Title
+        title_key = self.caller.db.title
+        if title_key:
+            title = get_title(title_key)
+            if title:
+                gender = getattr(self.caller.db, 'gender', 'masculine')
+                if gender not in ['masculine', 'feminine']:
+                    gender = 'masculine'
+                display_name = get_title_display_name(title_key, gender)
+                architect = title['architect_access']
+                if architect == "full":
+                    architect_display = " (Full Architect)"
+                elif architect == "limited":
+                    architect_display = " (Limited Architect)"
+                else:
+                    architect_display = " (Roleplay)"
+                self.caller.msg(f"|g[✓]|n Title - |w{display_name}|n{architect_display}")
+            else:
+                self.caller.msg(f"|g[✓]|n Title - |w{title_key}|n")
+        else:
+            self.caller.msg(f"|y[~]|n Title - Not set (optional)")
+            self.caller.msg("     |cUse |w+chargen/title/list|c to see available titles|n")
+        
         # Faction
         faction = self.caller.db.faction
         if faction:
@@ -1225,6 +1395,7 @@ class CmdChargen(MuxCommand):
         self.caller.msg("  |w+chargen/list|c - List archetypes")
         self.caller.msg("  |w+chargen/info <archetype>|c - Archetype details")
         self.caller.msg("  |w+chargen/caste <caste>|c - Set caste")
+        self.caller.msg("  |w+chargen/title/list|c - List titles")
         self.caller.msg("  |w+chargen/faction/list|c - List factions")
         self.caller.msg("  |w+chargen/status|c - Show this status")
         self.caller.msg("  |w+bio|c - Finishing touches (Step 8)")

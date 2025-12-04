@@ -7,7 +7,7 @@ STEP 2: Choose archetype
 +chargen/list (see options)
 +chargen/info <archetype> (details)
 +chargen/archetype <name> (select)
-Optional: +chargen/caste <caste> | +chargen/faction/list
+Optional: +chargen/caste <caste> | +chargen/title/list | +chargen/faction/list
 
 STEP 3: Assign 5 skill points (max skill 8)
 +chargen/skills <skill>=<points>

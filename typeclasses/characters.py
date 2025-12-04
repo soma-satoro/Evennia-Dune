@@ -11,6 +11,24 @@ This implementation uses the Modiphus 2d20 system for Dune.
 
 from evennia.objects.objects import DefaultCharacter
 from .objects import ObjectParent
+from typeclasses.titles import get_title, get_architect_access_for_title
+
+# Architect mode role restrictions
+# Full architect access - can use all architect capabilities
+FULL_ARCHITECT_ROLES = [
+    "Ruler", "Consort", "Advisor", "Heir", "Councilor", "Envoy",
+    "Marshal", "Spymaster", "Swordmaster", "Treasurer", "Warmaster"
+]
+
+# Limited architect access - lower-level architect options
+LIMITED_ARCHITECT_ROLES = [
+    "Spy", "Agent", "Officer", "Security"
+]
+
+# No architect access - agent mode only
+NO_ARCHITECT_ROLES = [
+    "Chief Physician", "Scholar"
+]
 
 
 class Character(ObjectParent, DefaultCharacter):
@@ -277,6 +295,108 @@ class Character(ObjectParent, DefaultCharacter):
                 return asset
         return None
     
+    def get_role(self):
+        """
+        Get the character's role from their House or Organizations.
+        Checks both house roles and organization roles.
+        
+        Returns:
+            str: Role name if found, empty string otherwise
+        """
+        # First check character's direct role attribute
+        if self.db.role:
+            return self.db.role
+        
+        # Check house roles
+        if self.db.house:
+            house = self.db.house
+            if hasattr(house, 'db') and hasattr(house.db, 'roles'):
+                for role_name, role_info in house.db.roles.items():
+                    role_holder = role_info.get("character", "")
+                    if role_holder.lower() == self.key.lower():
+                        return role_name
+        
+        # Check organization roles
+        if hasattr(self.db, 'organizations') and self.db.organizations:
+            for org in self.db.organizations:
+                if hasattr(org, 'db') and hasattr(org.db, 'roles'):
+                    for role_name, role_info in org.db.roles.items():
+                        role_holder = role_info.get("character", "")
+                        if role_holder.lower() == self.key.lower():
+                            return role_name
+        
+        return ""
+    
+    def get_title(self):
+        """
+        Get the character's title display name.
+        
+        Returns:
+            str: Title display name if found, empty string otherwise
+        """
+        title_key = self.db.title
+        if not title_key:
+            return ""
+        
+        # Get character's gender if set
+        gender = getattr(self.db, 'gender', 'masculine')
+        if gender not in ['masculine', 'feminine']:
+            gender = 'masculine'
+        
+        from typeclasses.titles import get_title_display_name
+        display_name = get_title_display_name(title_key, gender)
+        return display_name or ""
+    
+    def get_architect_access_level(self):
+        """
+        Determine the character's architect access level based on their title or role.
+        Titles take precedence over roles if both exist.
+        
+        Returns:
+            str: "full", "limited", or "none"
+        """
+        # First check title (titles take precedence)
+        title_key = self.db.title
+        if title_key:
+            title_access = get_architect_access_for_title(title_key)
+            if title_access != "none":
+                return title_access
+        
+        # Then check role
+        role = self.get_role()
+        if not role:
+            return "none"
+        
+        role_lower = role.lower()
+        
+        # Check for full architect access
+        for full_role in FULL_ARCHITECT_ROLES:
+            if role_lower == full_role.lower():
+                return "full"
+        
+        # Check for limited architect access
+        for limited_role in LIMITED_ARCHITECT_ROLES:
+            if role_lower == limited_role.lower():
+                return "limited"
+        
+        # Check for no architect access
+        for no_role in NO_ARCHITECT_ROLES:
+            if role_lower == no_role.lower():
+                return "none"
+        
+        # Default: no access if role doesn't match any category
+        return "none"
+    
+    def can_use_architect_mode(self):
+        """
+        Check if character can use Architect mode at all.
+        
+        Returns:
+            bool: True if character has full or limited architect access
+        """
+        access_level = self.get_architect_access_level()
+        return access_level in ["full", "limited"]
+    
     def get_playstyle_mode(self):
         """
         Get the character's current playstyle mode.
@@ -289,18 +409,44 @@ class Character(ObjectParent, DefaultCharacter):
     def set_playstyle_mode(self, mode):
         """
         Set the character's playstyle mode.
+        Enforces role-based restrictions.
         
         Args:
             mode (str): "agent" or "architect"
             
         Returns:
-            bool: True if mode was set successfully, False if invalid mode
+            tuple: (success: bool, message: str)
         """
         valid_modes = ["agent", "architect"]
         if mode.lower() not in valid_modes:
-            return False
-        self.db.playstyle_mode = mode.lower()
-        return True
+            return (False, "Invalid mode. Must be 'agent' or 'architect'.")
+        
+        # Agent mode is always allowed
+        if mode.lower() == "agent":
+            self.db.playstyle_mode = "agent"
+            return (True, "Playstyle mode set to Agent.")
+        
+        # Architect mode requires appropriate title or role
+        if mode.lower() == "architect":
+            access_level = self.get_architect_access_level()
+            if access_level == "none":
+                title = self.get_title()
+                role = self.get_role()
+                if title:
+                    return (False, f"You cannot use Architect mode with the title '{title}'. Only Major, Noble, or Minor titles have access to Architect playstyle.")
+                elif role:
+                    return (False, f"You cannot use Architect mode with the role '{role}'. Only certain roles have access to Architect playstyle.")
+                else:
+                    return (False, "You must have an appropriate title or role to use Architect mode. Titles take precedence over roles.")
+            
+            self.db.playstyle_mode = "architect"
+            access_msg = "full" if access_level == "full" else "limited"
+            title = self.get_title()
+            role = self.get_role()
+            source = title if title else role
+            return (True, f"Playstyle mode set to Architect ({access_msg} access via {source}).")
+        
+        return (False, "Failed to set playstyle mode.")
     
     def get_architect_capable_assets(self):
         """
@@ -668,18 +814,8 @@ class Character(ObjectParent, DefaultCharacter):
         else:
             house = "None"
         
-        # Get role - check character's role attribute first, then check house roles
-        role = self.db.role or ""
-        if not role and self.db.house:
-            # Check if this character holds a role in their house
-            house_obj = self.db.house
-            if hasattr(house_obj, 'db') and hasattr(house_obj.db, 'roles'):
-                for role_name, role_info in house_obj.db.roles.items():
-                    if role_info.get("character", "").lower() == self.key.lower():
-                        role = role_name
-                        break
-        
-        role = role or "None"
+        # Get role using the new method (checks both house and organization roles)
+        role = self.get_role() or "None"
         faction = self.db.faction or "None"
         caste = self.db.caste or "None"
         
@@ -906,3 +1042,105 @@ class Character(ObjectParent, DefaultCharacter):
         lines.append("|w" + "=" * 80 + "|n")
         
         return "\n".join(lines)
+    
+    def get_languages(self):
+        """
+        Get the list of languages this character knows.
+        
+        Returns:
+            list: List of language names the character knows
+        """
+        if not hasattr(self.db, 'languages') or not self.db.languages:
+            # Default to The Truth if no languages set
+            return ["The Truth"]
+        return self.db.languages if isinstance(self.db.languages, list) else [self.db.languages]
+    
+    def get_speaking_language(self):
+        """
+        Get the character's currently set speaking language.
+        
+        Returns:
+            str or None: The current speaking language, or None if not set
+        """
+        return getattr(self.db, 'speaking_language', None)
+    
+    def prepare_say(self, speech, viewer=None, skip_english=False, language_only=False):
+        """
+        Prepare speech messages with language handling.
+        
+        Handles language-tagged speech (starting with ~) and formats messages
+        for different viewers based on whether they understand the language.
+        
+        Args:
+            speech (str): The speech text (may start with ~ for language tagging)
+            viewer (Character, optional): The character viewing the message
+            skip_english (bool): If True, don't default to English
+            language_only (bool): If True, only process language tags, don't format full say messages
+        
+        Returns:
+            tuple: (msg_self, msg_understand, msg_not_understand, language)
+                - msg_self: Message for the speaker
+                - msg_understand: Message for those who understand the language
+                - msg_not_understand: Message for those who don't understand
+                - language: The language being spoken (or None for default/English)
+        """
+        # Check if speech starts with ~ (language tag)
+        is_language_tagged = speech.startswith('~')
+        language = None
+        
+        if is_language_tagged:
+            # Remove the ~ prefix
+            speech = speech[1:].lstrip()
+            # Get the speaking language
+            language = self.get_speaking_language()
+            if not language:
+                # Default to The Truth if no language set
+                language = "The Truth"
+        
+        # If skip_english and no language, treat as no language
+        if skip_english and not language:
+            language = None
+        
+        # Format the speaker's name
+        # Use get_display_name if available, otherwise fall back to name
+        if viewer and viewer != self:
+            try:
+                speaker_name = self.get_display_name(viewer)
+            except AttributeError:
+                speaker_name = self.name
+        else:
+            speaker_name = self.name
+        
+        # Build messages
+        if language_only:
+            # For language_only mode, just return the speech text
+            # The caller will handle formatting
+            if language:
+                return (speech, speech, f"[foreign speech in {language}]", language)
+            else:
+                return (speech, speech, speech, None)
+        
+        # Standard say format: "Speaker says, \"message\""
+        if language:
+            # Language-tagged speech
+            msg_self = f'You say in {language}, "{speech}"'
+            msg_understand = f'{speaker_name} says in {language}, "{speech}"'
+            msg_not_understand = f'{speaker_name} says something in {language}.'
+        else:
+            # Default/English speech
+            msg_self = f'You say, "{speech}"'
+            msg_understand = f'{speaker_name} says, "{speech}"'
+            msg_not_understand = f'{speaker_name} says, "{speech}"'  # Same for default language
+        
+        return (msg_self, msg_understand, msg_not_understand, language)
+    
+    def record_scene_activity(self):
+        """
+        Record scene activity for tracking purposes.
+        
+        This can be used to track when characters are active in scenes
+        for logging, statistics, or other purposes.
+        """
+        # Basic implementation - can be extended later
+        # For now, this is a no-op to prevent errors
+        pass

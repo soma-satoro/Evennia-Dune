@@ -15,6 +15,7 @@ from typeclasses.assets import (
     create_warfare_asset,
     create_espionage_asset,
     create_intrigue_asset,
+    create_custom_asset,
     get_all_personal_asset_names,
     get_all_warfare_asset_names,
     get_all_espionage_asset_names,
@@ -27,17 +28,20 @@ class CmdAsset(MuxCommand):
     Create and manage assets.
     
     Usage:
-        +asset/create <asset name> - Create an Asset
+        +asset/create <asset name> - Create a predefined Asset
+        +asset/custom <name>=<type>/<quality>/<keywords>/<description> - Create a custom asset
         +asset/list [Personal|Warfare|Espionage|Intrigue] - List all available Assets (optionally filtered by type)
         +asset/info <asset name> - Show information about an asset
         +asset/quality <asset name>=<quality> - Set quality of an asset in your inventory
         +asset/quality <character>/<asset name>=<quality> - Set quality of another's asset (staff only)
+        +asset/permanent <asset name> - Make a temporary asset permanent (spend 2 Momentum)
         +asset/architect - List your architect-capable assets (can be used remotely)
         +asset/agent - List your agent-mode assets (require direct presence)
         +asset/mode [agent|architect] - Show or set your playstyle mode
     
     Switches:
-        /create - Create an asset and add it to your inventory
+        /create - Create a predefined asset and add it to your inventory
+        /custom - Create a custom asset (not from predefined list)
         /list - List all available Assets (optionally filter by type)
         /info - Show detailed information about an asset
         /quality - Set quality of an asset (0-5, or "Special")
@@ -51,6 +55,8 @@ class CmdAsset(MuxCommand):
     
     Examples:
         +asset/create Lasgun - Create a Lasgun and add it to inventory
+        +asset/custom "Stolen Documents"=Espionage/0/"Intelligence, Blackmail"/"Documents stolen from enemy House"
+        +asset/custom "Elite Guard Unit"=Warfare/2/"Infantry, Shield"/"Trained elite soldiers"
         +asset/list - See all available Assets
         +asset/list Personal - See only Personal Assets
         +asset/list Warfare - See only Warfare Assets
@@ -106,12 +112,22 @@ class CmdAsset(MuxCommand):
             self._set_asset_quality()
             return
         
+        # Make asset permanent
+        if "permanent" in self.switches:
+            self._make_permanent()
+            return
+        
         # Show asset info
         if "info" in self.switches:
             self._show_asset_info()
             return
         
-        # Create asset
+        # Create custom asset
+        if "custom" in self.switches:
+            self._create_custom_asset()
+            return
+        
+        # Create predefined asset
         if "create" in self.switches:
             self._create_asset()
             return
@@ -319,6 +335,145 @@ class CmdAsset(MuxCommand):
         
         self.caller.msg("|w" + "=" * 80 + "|n")
     
+    def _make_permanent(self):
+        """Make a temporary asset permanent (spend 2 Momentum)"""
+        if not self.args:
+            self.caller.msg("Usage: +asset/permanent <asset name>")
+            self.caller.msg("|ySpend 2 Momentum to make a temporary asset permanent.|n")
+            return
+        
+        asset_name = self.args.strip()
+        
+        # Find the asset
+        asset = self.caller.has_asset(asset_name)
+        if not asset:
+            self.caller.msg(f"|rYou don't have an asset named '{asset_name}' in your inventory.|n")
+            return
+        
+        # Check if it's already permanent (not marked as temporary)
+        if not asset.db.is_custom or not asset.get_special() or "temporary" not in asset.get_special().lower():
+            self.caller.msg(f"|y{asset_name} is already permanent.|n")
+            return
+        
+        # Check Momentum
+        momentum = getattr(self.caller.db, 'momentum', 0)
+        if momentum < 2:
+            self.caller.msg(f"|rYou need 2 Momentum to make an asset permanent. Current: {momentum}|n")
+            return
+        
+        # Spend Momentum and make permanent
+        self.caller.db.momentum -= 2
+        
+        # Remove temporary marker
+        special = asset.get_special()
+        if special:
+            special = special.replace("Created during conflict. Spend 2 Momentum to make permanent.", "")
+            special = special.replace("Temporary", "").strip()
+            if special:
+                asset.set_special(special)
+            else:
+                asset.set_special("")
+        
+        # Remove temporary keywords
+        if "Temporary" in asset.get_keywords():
+            asset.remove_keyword("Temporary")
+        
+        self.caller.msg(f"|gMade {asset_name} permanent! (Spent 2 Momentum)|n")
+        
+        room = self.caller.location
+        if room:
+            room.msg_contents(
+                f"|y{self.caller.name} makes {asset_name} permanent.|n",
+                exclude=self.caller
+            )
+    
+    def _create_custom_asset(self):
+        """Create a custom asset (not from predefined list)"""
+        if not self.args or "=" not in self.args:
+            self.caller.msg("Usage: +asset/custom <name>=<type>/<quality>/<keywords>/<description>")
+            self.caller.msg("")
+            self.caller.msg("|yFormat:|n")
+            self.caller.msg("  <name> - Name of the asset (use quotes if it contains spaces)")
+            self.caller.msg("  <type> - Personal, Warfare, Espionage, or Intrigue")
+            self.caller.msg("  <quality> - Quality rating (0-5, default 0)")
+            self.caller.msg("  <keywords> - Comma-separated keywords (optional)")
+            self.caller.msg("  <description> - Description of the asset (optional)")
+            self.caller.msg("")
+            self.caller.msg("|yExamples:|n")
+            self.caller.msg('  +asset/custom "Stolen Documents"=Espionage/0/"Intelligence, Blackmail"/"Documents stolen from enemy House"')
+            self.caller.msg('  +asset/custom "Elite Guard"=Warfare/2/"Infantry, Shield"/"Trained elite soldiers"')
+            self.caller.msg('  +asset/custom "Favor Owed"=Intrigue/0/"Favor"/"A favor owed by a contact"')
+            return
+        
+        # Parse: name=type/quality/keywords/description
+        parts = self.args.split("=", 1)
+        if len(parts) != 2:
+            self.caller.msg("|rInvalid format. Use: <name>=<type>/<quality>/<keywords>/<description>|n")
+            return
+        
+        name = parts[0].strip().strip('"')
+        rest = parts[1].strip()
+        
+        # Split by / to get type, quality, keywords, description
+        rest_parts = rest.split("/")
+        if len(rest_parts) < 1:
+            self.caller.msg("|rInvalid format. Must include at least asset type.|n")
+            return
+        
+        asset_type = rest_parts[0].strip()
+        quality = 0
+        keywords = []
+        description = ""
+        special = ""
+        
+        if len(rest_parts) > 1:
+            try:
+                quality = int(rest_parts[1].strip())
+                if not (0 <= quality <= 5):
+                    self.caller.msg("|rQuality must be 0-5.|n")
+                    return
+            except ValueError:
+                self.caller.msg("|rQuality must be a number (0-5).|n")
+                return
+        
+        if len(rest_parts) > 2:
+            keywords_str = rest_parts[2].strip().strip('"')
+            if keywords_str:
+                keywords = [k.strip() for k in keywords_str.split(",")]
+        
+        if len(rest_parts) > 3:
+            description = rest_parts[3].strip().strip('"')
+        
+        # Validate asset type
+        valid_types = ["Personal", "Warfare", "Espionage", "Intrigue"]
+        if asset_type not in valid_types:
+            self.caller.msg(f"|rInvalid asset type: {asset_type}|n")
+            self.caller.msg(f"|yValid types:|n {', '.join(valid_types)}")
+            return
+        
+        # Check if character already has an asset with this name
+        existing = self.caller.has_asset(name)
+        if existing:
+            self.caller.msg(f"|yYou already have an asset named '{name}' in your inventory.|n")
+            return
+        
+        # Create the custom asset
+        asset = create_custom_asset(
+            name=name,
+            asset_type=asset_type,
+            character=self.caller,
+            quality=quality,
+            keywords=keywords,
+            description=description,
+            special=special
+        )
+        
+        if asset:
+            self.caller.msg(f"|gCreated custom asset: {name} ({asset_type}, Quality {quality})|n")
+            self.caller.msg(f"Use |w+inv|n to view your inventory, or |w+inv/detail {name}|n for details.")
+        else:
+            self.caller.msg(f"|rFailed to create custom asset: {name}|n")
+    
     def _create_asset(self):
         """Create an asset and add it to inventory"""
         if not self.args:
@@ -447,14 +602,76 @@ class CmdAsset(MuxCommand):
             # Show current mode
             current_mode = self.caller.get_playstyle_mode()
             mode_display = "|cArchitect|n" if current_mode == "architect" else "|mAgent|n"
+            role = self.caller.get_role()
+            title = self.caller.get_title()
+            access_level = self.caller.get_architect_access_level()
+            
             self.caller.msg("|w" + "=" * 80 + "|n")
             self.caller.msg(f"|wCurrent Playstyle Mode:|n {mode_display}")
+            
+            # Show title and role information
+            has_qualification = False
+            if title:
+                self.caller.msg(f"|wCurrent Title:|n {title}")
+                has_qualification = True
+            if role:
+                self.caller.msg(f"|wCurrent Role:|n {role}")
+                has_qualification = True
+            
+            # Show access level
+            if access_level == "full":
+                self.caller.msg(f"|wArchitect Access:|n |gFull|n (all architect capabilities)")
+            elif access_level == "limited":
+                self.caller.msg(f"|wArchitect Access:|n |yLimited|n (lower-level architect options)")
+            else:
+                self.caller.msg(f"|wArchitect Access:|n |rNone|n (agent mode only)")
+            
+            if not has_qualification:
+                self.caller.msg("|yNote:|n No title or role set")
+            
             self.caller.msg("")
             self.caller.msg("|yAgent Mode:|n Direct action requiring personal presence")
             self.caller.msg("  Example: Using a gun, fighting directly, personal interaction")
             self.caller.msg("")
             self.caller.msg("|yArchitect Mode:|n Remote action using assets from a distance")
             self.caller.msg("  Example: Sending a squad of soldiers, anonymous blackmail letter")
+            self.caller.msg("")
+            
+            # Show requirements (titles take precedence)
+            self.caller.msg("|yArchitect Mode Requirements:|n")
+            self.caller.msg("")
+            self.caller.msg("  |gFull Access (Titles):|n")
+            self.caller.msg("    Singular: Padishah Emperor/Empress")
+            self.caller.msg("    Major: Prince/Princess, Archduke/Archduchess, Grand Duke/Grand Duchess,")
+            self.caller.msg("           Duke/Duchess, Duce, Doge, Emir, Jarl/Jarless")
+            self.caller.msg("    Noble: Marquess/Marchioness, Margrave/Margravine, Count/Countess,")
+            self.caller.msg("           Earl, Viscount/Viscountess")
+            self.caller.msg("")
+            self.caller.msg("  |gFull Access (Roles):|n")
+            self.caller.msg("    Ruler, Consort, Advisor, Heir, Councilor, Envoy,")
+            self.caller.msg("    Marshal, Spymaster, Swordmaster, Treasurer, Warmaster")
+            self.caller.msg("")
+            self.caller.msg("  |yLimited Access (Titles):|n")
+            self.caller.msg("    Minor: Baron/Baroness, Baronet/Baronetess, Castellan")
+            self.caller.msg("")
+            self.caller.msg("  |yLimited Access (Roles):|n")
+            self.caller.msg("    Spy, Agent, Officer, Security")
+            self.caller.msg("")
+            self.caller.msg("  |rNo Access:|n")
+            self.caller.msg("    Lesser titles (Knight, Lord, Esquire, etc.),")
+            self.caller.msg("    Chief Physician, Scholar, or no title/role")
+            self.caller.msg("")
+            
+            if access_level == "none":
+                if title:
+                    self.caller.msg(f"|rYou do not have access to Architect mode with your title '{title}'.|n")
+                elif role:
+                    self.caller.msg(f"|rYou do not have access to Architect mode with your role '{role}'.|n")
+                else:
+                    self.caller.msg("|rYou need an appropriate title or role to use Architect mode.|n")
+            elif access_level == "limited":
+                self.caller.msg("|yYou have limited Architect access - lower-level architect options only.|n")
+            
             self.caller.msg("")
             self.caller.msg("Use |w+asset/mode <agent|architect>|n to change your playstyle mode.")
             self.caller.msg("|w" + "=" * 80 + "|n")
@@ -466,19 +683,46 @@ class CmdAsset(MuxCommand):
             self.caller.msg("|rInvalid mode. Must be 'agent' or 'architect'.|n")
             return
         
-        if self.caller.set_playstyle_mode(mode):
-            mode_display = "|cArchitect|n" if mode == "architect" else "|mAgent|n"
-            self.caller.msg(f"|gPlaystyle mode set to {mode_display}|n")
+        success, message = self.caller.set_playstyle_mode(mode)
+        if success:
+            self.caller.msg(f"|g{message}|n")
         else:
-            self.caller.msg("|rFailed to set playstyle mode.|n")
+            self.caller.msg(f"|r{message}|n")
     
     def _list_architect_assets(self):
         """List assets that can be used in Architect mode (remotely)"""
         assets = self.caller.get_architect_capable_assets()
+        access_level = self.caller.get_architect_access_level()
+        role = self.caller.get_role()
+        title = self.caller.get_title()
         
         self.caller.msg("|w" + "=" * 80 + "|n")
         self.caller.msg("|wARCHITECT-CAPABLE ASSETS|n".center(80))
         self.caller.msg("|w" + "=" * 80 + "|n")
+        
+        # Show access level warning
+        if access_level == "none":
+            self.caller.msg("|rWARNING: You do not have Architect mode access.|n")
+            if title:
+                self.caller.msg(f"|rYour title '{title}' does not allow Architect playstyle.|n")
+            elif role:
+                self.caller.msg(f"|rYour role '{role}' does not allow Architect playstyle.|n")
+            else:
+                self.caller.msg("|rYou need an appropriate title or role to use Architect mode.|n")
+            self.caller.msg("")
+            self.caller.msg("|yRequired for Architect access:|n")
+            self.caller.msg("  |gFull Access (Titles):|n Major/Noble titles (Prince, Duke, Count, etc.)")
+            self.caller.msg("  |gFull Access (Roles):|n Ruler, Consort, Advisor, Heir, Councilor, Envoy,")
+            self.caller.msg("                        Marshal, Spymaster, Swordmaster, Treasurer, Warmaster")
+            self.caller.msg("  |yLimited Access (Titles):|n Minor titles (Baron, Baronet, Castellan)")
+            self.caller.msg("  |yLimited Access (Roles):|n Spy, Agent, Officer, Security")
+            self.caller.msg("")
+            self.caller.msg("|cUse |w+chargen/title/list|c to see available titles.|n")
+            self.caller.msg("")
+        elif access_level == "limited":
+            self.caller.msg("|yNote:|n You have |ylimited|n Architect access (lower-level options only).|n")
+            self.caller.msg("")
+        
         self.caller.msg("|yThese assets can be used remotely (Architect mode):|n")
         self.caller.msg("")
         
@@ -509,7 +753,8 @@ class CmdAsset(MuxCommand):
         current_mode = self.caller.get_playstyle_mode()
         if current_mode != "architect":
             self.caller.msg(f"|yNote:|n Your current playstyle mode is |m{current_mode.capitalize()}|n.")
-            self.caller.msg("Use |w+asset/mode architect|n to switch to Architect mode.")
+            if access_level != "none":
+                self.caller.msg("Use |w+asset/mode architect|n to switch to Architect mode.")
         
         self.caller.msg("|w" + "=" * 80 + "|n")
     
