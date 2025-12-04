@@ -355,14 +355,13 @@ class Character(ObjectParent, DefaultCharacter):
         Returns:
             str: "full", "limited", or "none"
         """
-        # First check title (titles take precedence)
+        # First check title (titles take precedence - return immediately if title exists)
         title_key = self.db.title
         if title_key:
             title_access = get_architect_access_for_title(title_key)
-            if title_access != "none":
-                return title_access
+            return title_access  # Return title access regardless of value (including "none")
         
-        # Then check role
+        # Then check role (only if no title exists)
         role = self.get_role()
         if not role:
             return "none"

@@ -317,6 +317,53 @@ def create_espionage_asset(asset_name, character=None):
     return asset
 
 
+def create_custom_asset(name, asset_type, character=None, quality=0, keywords=None, description="", special=""):
+    """
+    Create a custom Asset object (not from predefined data).
+    Used for assets created during conflicts or as rewards.
+    
+    Args:
+        name (str): Name of the asset
+        asset_type (str): Type of asset ("Personal", "Warfare", "Espionage", "Intrigue")
+        character (Character, optional): Character to give the asset to
+        quality (int): Quality rating (0-5, default 0)
+        keywords (list, optional): List of keywords
+        description (str): Description of the asset
+        special (str): Special rules or properties
+        
+    Returns:
+        Asset: The created Asset object, or None if invalid
+    """
+    from evennia import create_object
+    
+    valid_types = ["Personal", "Warfare", "Espionage", "Intrigue"]
+    if asset_type not in valid_types:
+        return None
+    
+    # Create the asset object
+    asset = create_object(
+        Asset,
+        key=name,
+        location=character if character else None
+    )
+    
+    # Set asset properties
+    asset.set_asset_type(asset_type)
+    asset.set_quality(quality)
+    asset.set_description(description)
+    asset.set_special(special)
+    
+    # Add keywords
+    if keywords:
+        for keyword in keywords:
+            asset.add_keyword(keyword)
+    
+    # Mark as custom asset (not from predefined data)
+    asset.db.is_custom = True
+    
+    return asset
+
+
 def create_intrigue_asset(asset_name, character=None):
     """
     Create an Intrigue Asset object.
@@ -409,6 +456,7 @@ __all__ = [
     'create_warfare_asset',
     'create_espionage_asset',
     'create_intrigue_asset',
+    'create_custom_asset',
     'get_all_personal_asset_names',
     'get_all_warfare_asset_names',
     'get_all_espionage_asset_names',

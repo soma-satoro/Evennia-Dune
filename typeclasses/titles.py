@@ -17,6 +17,14 @@ while lower titles are primarily for roleplay and background information.
 #       "description": "Description of the title"
 #   }
 # }
+# The hierarchy_level is used to determine the authority of the title.
+# The hereditary is used to determine if the title is hereditary.
+# The architect_access is used to determine if the title has architect access.
+# The description is used to describe the title.
+# The category is used to determine the category of the title.
+# The masculine is used to determine the masculine form of the title.
+# The feminine is used to determine the feminine form of the title.
+# The title_key is used to determine the key of the title.
 
 TITLES = {
     # Singular titles

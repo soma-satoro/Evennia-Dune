@@ -21,6 +21,13 @@ from commands.dune.CmdInventory import CmdInventory
 from commands.dune.CmdAsset import CmdAsset
 from commands.dune.CmdChargen import CmdChargen
 from commands.dune.CmdBio import CmdBio
+from commands.dune.CmdDuel import CmdDuel
+from commands.dune.CmdSkirmish import CmdSkirmish
+from commands.dune.CmdEspionage import CmdEspionage
+from commands.dune.CmdWarfare import CmdWarfare
+from commands.dune.CmdIntrigue import CmdIntrigue
+from commands.dune.CmdConflict import CmdConflict
+from commands.dune.CmdReward import CmdReward
 
 
 class DuneCmdSet(CmdSet):
@@ -52,6 +59,14 @@ class DuneCmdSet(CmdSet):
         self.add(CmdThreat())
         self.add(CmdExtendedTask())
         
+        # Combat commands
+        self.add(CmdConflict())  # General conflict actions (must be first)
+        self.add(CmdDuel())
+        self.add(CmdSkirmish())
+        self.add(CmdEspionage())
+        self.add(CmdWarfare())
+        self.add(CmdIntrigue())
+        
         # House management command (builder+ only for creation/editing)
         self.add(CmdHouse())
         
@@ -68,4 +83,7 @@ class DuneCmdSet(CmdSet):
         
         # Room management command (builder+ only)
         self.add(CmdRoom())
+        
+        # Staff/GM commands
+        self.add(CmdReward())
 
