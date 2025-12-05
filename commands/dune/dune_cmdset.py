@@ -28,6 +28,8 @@ from commands.dune.CmdWarfare import CmdWarfare
 from commands.dune.CmdIntrigue import CmdIntrigue
 from commands.dune.CmdConflict import CmdConflict
 from commands.dune.CmdReward import CmdReward
+from commands.dune.CmdAdvancement import CmdAdvancement
+from commands.dune.CmdAdvanceAward import CmdAdvanceAward, CmdAdvanceSession
 
 
 class DuneCmdSet(CmdSet):
@@ -50,6 +52,7 @@ class DuneCmdSet(CmdSet):
         self.add(CmdAsset())
         self.add(CmdChargen())
         self.add(CmdBio())
+        self.add(CmdAdvancement())
         
         # Dice and mechanics commands
         self.add(CmdRoll())
@@ -86,4 +89,6 @@ class DuneCmdSet(CmdSet):
         
         # Staff/GM commands
         self.add(CmdReward())
+        self.add(CmdAdvanceAward())
+        self.add(CmdAdvanceSession())
 

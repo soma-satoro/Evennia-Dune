@@ -58,24 +58,24 @@ First, create accounts for all roster characters:
 +bio/gender feminine
 ```
 
-**Step 2: Skills (Battle 4, Communicate 5, Discipline 5, Move 3, Understand 5)**
+**Step 2: Skills (Discipline 8, Communicate 7, Understand 5, Battle 4, Move 4) = 28 points**
 ```
-+stats battle=4
-+stats communicate=5
-+stats discipline=5
-+stats move=3
++stats discipline=8
++stats communicate=7
 +stats understand=5
++stats battle=4
++stats move=4
 ```
 
 **Step 3: Focuses**
 ```
-+stats/focus add=Battle: Knife Fighting
-+stats/focus add=Communicate: Voice
-+stats/focus add=Communicate: Intimidation
-+stats/focus add=Discipline: Bene Gesserit Training
-+stats/focus add=Discipline: Ancestral Memories
-+stats/focus add=Understand: Politics
-+stats/focus add=Understand: Spice Knowledge
++stats/focus add=Short Blades
++stats/focus add=Intimidation
++stats/focus add=Composure
++stats/focus add=Resolve
++stats/focus add=Imperial Politics
++stats/focus add=House Politics
++stats/focus add=Botany
 ```
 
 **Step 4: Talents**
@@ -103,8 +103,6 @@ First, create accounts for all roster characters:
 
 **Step 6: Biography**
 ```
-+bio/background Born as a pre-born with full ancestral memories, Alia Atreides became Regent of the Imperium after her brother Paul's disappearance into the desert. She rules from Arrakeen with absolute authority, wielding both political power and terrifying Bene Gesserit abilities. However, she wages a constant internal battle against possession by her ancestral memories, particularly the insidious voice of Baron Vladimir Harkonnen.
-
 +bio/personality Authoritative, intelligent, and charismatic, but increasingly erratic and volatile. She displays flashes of the Harkonnen cruelty she inherited through genetic memory. Fiercely protective of her family's legacy while simultaneously struggling with her own identity.
 
 +bio/ambition Maintain control of the Empire and resist ancestral possession
@@ -142,19 +140,19 @@ First, create accounts for all roster characters:
 +bio/caste Noble
 +bio/gender masculine
 
-+stats battle=3
++stats discipline=8
++stats understand=7
++stats move=5
++stats battle=4
 +stats communicate=4
-+stats discipline=5
-+stats move=4
-+stats understand=5
 
-+stats/focus add=Battle: Crysknife
-+stats/focus add=Communicate: Leadership
-+stats/focus add=Discipline: Ancestral Memories
-+stats/focus add=Discipline: Prescience
-+stats/focus add=Move: Desert Survival
-+stats/focus add=Understand: Ecology
-+stats/focus add=Understand: Imperial Politics
++stats/focus add=Short Blades
++stats/focus add=Inspiration
++stats/focus add=Composure
++stats/focus add=Resolve
++stats/focus add=Survival/Desert
++stats/focus add=Ecology
++stats/focus add=Imperial Politics
 
 +stats/talent add=Pre-Born
 +stats/talent add=Fremen Training
@@ -171,8 +169,6 @@ First, create accounts for all roster characters:
 +stats/drive justice/statement=I will ensure that humanity's future is secured, even if the present must suffer
 +stats/drive power=5
 +stats/drive faith=4
-
-+bio/background Son of Paul Muad'Dib and Chani, Leto II was born pre-born with access to the memories of all his ancestors. Coming of age under the regency of his aunt Alia, he has begun to see the Golden Path - a future that requires terrible sacrifice. He stands at a crossroads: accept his humanity and a normal life, or embrace a transformation that will make him the immortal God Emperor for thousands of years.
 
 +bio/personality Introspective, profoundly wise beyond his years, yet still retains flashes of youthful curiosity and emotion. He bears the weight of prescient knowledge with grim determination. More willing than his father to pay the terrible price the future demands.
 
@@ -204,19 +200,19 @@ First, create accounts for all roster characters:
 +bio/caste Noble
 +bio/gender feminine
 
-+stats battle=3
-+stats communicate=5
-+stats discipline=5
++stats communicate=8
++stats discipline=7
++stats understand=5
++stats battle=4
 +stats move=4
-+stats understand=4
 
-+stats/focus add=Battle: Crysknife
-+stats/focus add=Communicate: Empathy
-+stats/focus add=Communicate: Voice
-+stats/focus add=Discipline: Ancestral Memories
-+stats/focus add=Discipline: Mental Barriers
-+stats/focus add=Move: Desert Survival
-+stats/focus add=Understand: Human Nature
++stats/focus add=Short Blades
++stats/focus add=Empathy
++stats/focus add=Persuasion
++stats/focus add=Composure
++stats/focus add=Resolve
++stats/focus add=Survival/Desert
++stats/focus add=Physical Empathy
 
 +stats/talent add=Pre-Born
 +stats/talent add=Fremen Training
@@ -234,8 +230,6 @@ First, create accounts for all roster characters:
 +stats/drive faith/statement=I believe in the essential goodness of humanity and the value of individual choice
 +stats/drive power=5
 +stats/drive truth=4
-
-+bio/background Daughter of Paul Muad'Dib and Chani, Ghanima was born pre-born like her twin brother Leto II. Raised among the Fremen at Sietch Tabr, she combines desert wisdom with ancestral knowledge. She shares a deep psychic bond with her brother and understands the terrible burden of the Golden Path, providing him emotional support and wisdom.
 
 +bio/personality Strong-willed, perceptive, and deeply compassionate despite her ancestral memories. She possesses a sharp wit and often serves as the voice of reason. More emotionally expressive than her brother, but equally burdened by prescient knowledge.
 
@@ -268,20 +262,20 @@ First, create accounts for all roster characters:
 +bio/caste Retainer
 +bio/gender masculine
 
-+stats battle=5
-+stats communicate=3
-+stats discipline=4
-+stats move=5
-+stats understand=3
++stats battle=8
++stats move=7
++stats discipline=5
++stats communicate=4
++stats understand=4
 
-+stats/focus add=Battle: Long Blade
-+stats/focus add=Battle: Short Blade
-+stats/focus add=Battle: Shield Fighting
-+stats/focus add=Battle: Multiple Opponents
-+stats/focus add=Discipline: Mentat Training (Tleilaxu gift)
-+stats/focus add=Discipline: Combat Focus
-+stats/focus add=Move: Acrobatics
-+stats/focus add=Move: Infiltration
++stats/focus add=Long Blades
++stats/focus add=Short Blades
++stats/focus add=Shield Fighting
++stats/focus add=Tactics
++stats/focus add=Infiltration
++stats/focus add=Composure
++stats/focus add=Acrobatics
++stats/focus add=Stealth
 
 +stats/talent add=Master Swordsman
 +stats/talent add=Ginaz Training
@@ -299,8 +293,6 @@ First, create accounts for all roster characters:
 +stats/drive power/statement=I seek to master my own fate and prove I am more than a manufactured copy
 +stats/drive truth=5
 +stats/drive faith=4
-
-+bio/background The legendary Swordmaster of House Atreides, Duncan Idaho died defending Paul during the Harkonnen attack. Resurrected by the Tleilaxu as a ghola called Hayt, he recovered his original memories and returned to Atreides service. Now married to Alia, he struggles with questions of identity, mortality, and loyalty while serving as one of the greatest warriors in the Imperium.
 
 +bio/personality Intensely loyal to House Atreides, but troubled by his resurrection and the philosophical questions it raises. Stoic and disciplined, with flashes of the old warmth and humor. Deeply concerned about Alia's growing instability.
 
@@ -332,20 +324,20 @@ First, create accounts for all roster characters:
 +bio/caste Noble
 +bio/gender feminine
 
-+stats battle=2
-+stats communicate=5
-+stats discipline=4
-+stats move=2
-+stats understand=5
++stats understand=8
++stats communicate=7
++stats discipline=5
++stats battle=4
++stats move=4
 
-+stats/focus add=Communicate: Diplomacy
-+stats/focus add=Communicate: Teaching
-+stats/focus add=Communicate: Voice
-+stats/focus add=Discipline: Bene Gesserit Training
-+stats/focus add=Understand: History
-+stats/focus add=Understand: Politics
-+stats/focus add=Understand: Imperial Protocol
-+stats/focus add=Understand: Writing
++stats/focus add=Diplomacy
++stats/focus add=Teaching
++stats/focus add=Persuasion
++stats/focus add=Composure
++stats/focus add=Cultural Studies
++stats/focus add=Imperial Politics
++stats/focus add=Etiquette
++stats/focus add=Linguistics
 
 +stats/talent add=Bene Gesserit Training
 +stats/talent add=Voice
@@ -363,8 +355,6 @@ First, create accounts for all roster characters:
 +stats/drive justice/statement=I seek to atone for my house's crimes and my own conspiracies against Paul
 +stats/drive power=5
 +stats/drive faith=4
-
-+bio/background Eldest daughter of Emperor Shaddam IV, Irulan received the finest education in the Imperium and was trained by the Bene Gesserit. Married to Paul Atreides in a political union, she was denied children but found purpose as historian and chronicler of the Muad'Dib legend. After Paul's disappearance, she serves as tutor to Leto II and Ghanima, seeking redemption for past conspiracies against Paul.
 
 +bio/personality Intelligent, cultured, and diplomatic. Haunted by regret over past actions and her loveless marriage. She possesses deep compassion masked by imperial dignity. Excellent teacher and historian with a gift for seeing patterns in history.
 
@@ -397,20 +387,20 @@ First, create accounts for all roster characters:
 +bio/caste Noble
 +bio/gender feminine
 
-+stats battle=3
-+stats communicate=5
-+stats discipline=5
-+stats move=3
++stats discipline=8
++stats communicate=7
 +stats understand=5
++stats battle=4
++stats move=4
 
-+stats/focus add=Battle: Bene Gesserit Fighting
-+stats/focus add=Communicate: Voice
-+stats/focus add=Communicate: Manipulation
-+stats/focus add=Discipline: Bene Gesserit Training
-+stats/focus add=Discipline: Truthsaying
-+stats/focus add=Discipline: Other Memory
-+stats/focus add=Understand: Politics
-+stats/focus add=Understand: Bene Gesserit Lore
++stats/focus add=Unarmed Combat
++stats/focus add=Persuasion
++stats/focus add=Deceit
++stats/focus add=Composure
++stats/focus add=Observe
++stats/focus add=Resolve
++stats/focus add=Imperial Politics
++stats/focus add=Faction Lore/Bene Gesserit
 
 +stats/talent add=Bene Gesserit Training
 +stats/talent add=Reverend Mother
@@ -429,8 +419,6 @@ First, create accounts for all roster characters:
 +stats/drive truth/statement=I will face the consequences of my choices and see clearly through deception
 +stats/drive power=5
 +stats/drive justice=4
-
-+bio/background Once concubine to Duke Leto Atreides, Jessica is a Bene Gesserit Reverend Mother who defied the Sisterhood by bearing a son instead of a daughter. Mother to Paul Muad'Dib and Alia, grandmother to Leto II and Ghanima, she carries the weight of seeing her choices ripple across the Imperium. Returned to Arrakis to guide her grandchildren and attempt to save her daughter from possession.
 
 +bio/personality Wise, calculating, and deeply maternal despite her Bene Gesserit training. Carries profound guilt over Alia's pre-born condition. She balances love for her family with cold practicality when needed. Master of Voice and Bene Gesserit arts.
 
@@ -464,20 +452,20 @@ First, create accounts for all roster characters:
 +bio/caste Fremen
 +bio/gender masculine
 
-+stats battle=5
-+stats communicate=3
-+stats discipline=4
++stats battle=8
++stats understand=6
++stats discipline=6
 +stats move=4
-+stats understand=3
++stats communicate=4
 
-+stats/focus add=Battle: Crysknife
-+stats/focus add=Battle: Maula Pistol
-+stats/focus add=Battle: Desert Warfare
-+stats/focus add=Communicate: Leadership
-+stats/focus add=Discipline: Pain Resistance
-+stats/focus add=Move: Desert Survival
-+stats/focus add=Move: Sandwalking
-+stats/focus add=Understand: Fremen Lore
++stats/focus add=Short Blades
++stats/focus add=Pistols
++stats/focus add=Tactics
++stats/focus add=Inspiration
++stats/focus add=Resolve
++stats/focus add=Survival/Desert
++stats/focus add=Stealth
++stats/focus add=Faction Lore/Fremen
 
 +stats/talent add=Fremen Warrior
 +stats/talent add=Desert Survival Expert
@@ -495,8 +483,6 @@ First, create accounts for all roster characters:
 +stats/drive justice/statement=I will uphold Fremen law and tradition in a changing world
 +stats/drive power=5
 +stats/drive truth=4
-
-+bio/background Naib of Sietch Tabr and among the first Fremen to recognize Paul Muad'Dib's potential, Stilgar has served House Atreides faithfully through the Jihad and beyond. Now he serves as guardian to Paul's children, teaching them the old ways while watching his people transform from desert warriors to Imperial citizens. He reveres Paul as the prophet but worries about what the future holds.
 
 +bio/personality Traditional, honorable, and deeply religious in his belief in Muad'Dib's prophecy. Loyal to the bone but increasingly troubled by the changes to Fremen culture. He is pragmatic when needed but holds firm to the old ways. Gruff exterior hides deep affection for those under his care.
 
@@ -527,20 +513,20 @@ First, create accounts for all roster characters:
 +bio/caste Retainer
 +bio/gender masculine
 
-+stats battle=5
-+stats communicate=3
-+stats discipline=4
-+stats move=3
-+stats understand=3
++stats battle=8
++stats communicate=6
++stats discipline=6
++stats move=4
++stats understand=4
 
-+stats/focus add=Battle: Long Blade
-+stats/focus add=Battle: Shield Fighting
-+stats/focus add=Battle: Military Tactics
-+stats/focus add=Battle: Small Unit Tactics
-+stats/focus add=Communicate: Inspiration
-+stats/focus add=Discipline: Pain Resistance
-+stats/focus add=Understand: Military Strategy
-+stats/focus add=Understand: Music (baliset)
++stats/focus add=Long Blades
++stats/focus add=Shield Fighting
++stats/focus add=Strategy
++stats/focus add=Tactics
++stats/focus add=Inspiration
++stats/focus add=Resolve
++stats/focus add=Imperial Politics
++stats/focus add=Music/baliset
 
 +stats/talent add=Master Warrior
 +stats/talent add=Military Genius
@@ -558,8 +544,6 @@ First, create accounts for all roster characters:
 +stats/drive faith/statement=I believe in the old Duke's vision of just rule, even in this age of holy war
 +stats/drive power=5
 +stats/drive truth=4
-
-+bio/background Veteran warrior and troubadour, Gurney Halleck has served House Atreides since Duke Leto freed him from Harkonnen slavery. He survived the fall of Arrakis, years as a smuggler, and fought in Paul's Jihad across the stars. Now Warmaster of Atreides forces, he commands armies while remaining loyal to the ideals of the old Duke. He carries the scars of Harkonnen torture and the weight of the Jihad's violence.
 
 +bio/personality Gruff, cynical, but with a deep romantic soul that finds expression in music and poetry. Absolutely loyal to House Atreides. Quick to violence when needed but haunted by the cost of the Jihad. Mentor figure who balances harsh training with genuine care.
 

@@ -86,22 +86,22 @@ She typically wears elaborate robes befitting her station as Regent."""
     char.db.reputation_trait = "The Pre-Born Regent"
     
     # Skills (Dune 2d20: Battle, Communicate, Discipline, Move, Understand)
-    # Highly skilled, as befitting a major character
-    char.set_skill("battle", 4)  # Trained in combat, has ancestral memories
-    char.set_skill("communicate", 5)  # Master of Voice and manipulation
-    char.set_skill("discipline", 5)  # Immense mental power (though threatened by possession)
-    char.set_skill("move", 3)  # Agile and trained
-    char.set_skill("understand", 5)  # Pre-born wisdom and ancestral knowledge
+    # Distribution: Primary 6+2=8, Secondary 5+2=7, Tertiary 4+1=5, Others 4, 4 = 28 total
+    char.set_skill("discipline", 8)  # Primary: Bene Gesserit mastery, mental powers
+    char.set_skill("communicate", 7)  # Secondary: Voice, manipulation, leadership
+    char.set_skill("understand", 5)  # Tertiary: Pre-born wisdom
+    char.set_skill("battle", 4)  # Trained in combat
+    char.set_skill("move", 4)  # Agile and trained
     
     # Focuses
     char.db.stats["focuses"] = [
-        "Battle: Knife Fighting",
-        "Communicate: Voice",
-        "Communicate: Intimidation", 
-        "Discipline: Bene Gesserit Training",
-        "Discipline: Ancestral Memories",
-        "Understand: Politics",
-        "Understand: Spice Knowledge"
+        "Short Blades",
+        "Intimidation",
+        "Composure",
+        "Resolve",
+        "Imperial Politics",
+        "House Politics",
+        "Botany"
     ]
     
     # Talents (Bene Gesserit abilities and pre-born powers)
@@ -186,22 +186,22 @@ Fremen. When he gazes into the distance, it's as if he's looking through time it
     
     char.db.reputation_trait = "The Pre-Born Heir"
     
-    # Skills (High potential but still coming of age)
-    char.set_skill("battle", 3)  # Well-trained, Fremen combat skills
+    # Skills: Primary 6+2=8, Secondary 5+2=7, Tertiary 4+1=5, Others 4, 4 = 28 total
+    char.set_skill("discipline", 8)  # Primary: Pre-born mental control, prescience
+    char.set_skill("understand", 7)  # Secondary: Ancestral wisdom, Golden Path vision
+    char.set_skill("move", 5)  # Tertiary: Fremen desert training
+    char.set_skill("battle", 4)  # Well-trained, Fremen combat skills
     char.set_skill("communicate", 4)  # Natural leader
-    char.set_skill("discipline", 5)  # Exceptional mental control
-    char.set_skill("move", 4)  # Desert-trained
-    char.set_skill("understand", 5)  # Pre-born wisdom and prescience
     
     # Focuses
     char.db.stats["focuses"] = [
-        "Battle: Crysknife",
-        "Communicate: Leadership",
-        "Discipline: Ancestral Memories",
-        "Discipline: Prescience",
-        "Move: Desert Survival",
-        "Understand: Ecology",
-        "Understand: Imperial Politics"
+        "Short Blades",
+        "Inspiration",
+        "Composure",
+        "Resolve",
+        "Survival/Desert",
+        "Ecology",
+        "Imperial Politics"
     ]
     
     # Talents
@@ -282,22 +282,22 @@ in stillsuit or formal robes. Her gaze carries ancient wisdom."""
     
     char.db.reputation_trait = "The Wise Twin"
     
-    # Skills (Parallel to her brother but with different focus)
-    char.set_skill("battle", 3)  # Fremen combat training
-    char.set_skill("communicate", 5)  # Exceptional at reading and influencing people
-    char.set_skill("discipline", 5)  # Strong mental defenses
+    # Skills: Primary 6+2=8, Secondary 5+2=7, Tertiary 4+1=5, Others 4, 4 = 28 total
+    char.set_skill("communicate", 8)  # Primary: Empathy, social mastery
+    char.set_skill("discipline", 7)  # Secondary: Pre-born mental strength
+    char.set_skill("understand", 5)  # Tertiary: Wisdom, insight
+    char.set_skill("battle", 4)  # Fremen combat training
     char.set_skill("move", 4)  # Desert-trained
-    char.set_skill("understand", 4)  # Wise beyond her years
     
     # Focuses
     char.db.stats["focuses"] = [
-        "Battle: Crysknife",
-        "Communicate: Empathy",
-        "Communicate: Voice",
-        "Discipline: Ancestral Memories",
-        "Discipline: Mental Barriers",
-        "Move: Desert Survival",
-        "Understand: Human Nature"
+        "Short Blades",
+        "Empathy",
+        "Persuasion",
+        "Composure",
+        "Resolve",
+        "Survival/Desert",
+        "Physical Empathy"
     ]
     
     # Talents
@@ -382,23 +382,23 @@ of existential unease."""
     
     char.db.reputation_trait = "The Resurrected Swordmaster"
     
-    # Skills (Master combatant)
-    char.set_skill("battle", 5)  # Legendary swordmaster
-    char.set_skill("communicate", 3)  # Competent but not his focus
-    char.set_skill("discipline", 4)  # Strong mental discipline
-    char.set_skill("move", 5)  # Peak physical conditioning
-    char.set_skill("understand", 3)  # Practical wisdom
+    # Skills: Primary 6+2=8, Secondary 5+2=7, Tertiary 4+1=5, Others 4, 4 = 28 total
+    char.set_skill("battle", 8)  # Primary: Legendary swordmaster
+    char.set_skill("move", 7)  # Secondary: Peak physical conditioning
+    char.set_skill("discipline", 5)  # Tertiary: Combat focus, Mentat gift
+    char.set_skill("communicate", 4)  # Competent
+    char.set_skill("understand", 4)  # Practical wisdom
     
     # Focuses
     char.db.stats["focuses"] = [
-        "Battle: Long Blade",
-        "Battle: Short Blade",
-        "Battle: Shield Fighting",
-        "Battle: Multiple Opponents",
-        "Discipline: Mentat Training (Tleilaxu gift)",
-        "Discipline: Combat Focus",
-        "Move: Acrobatics",
-        "Move: Infiltration"
+        "Long Blades",
+        "Short Blades",
+        "Shield Fighting",
+        "Tactics",
+        "Infiltration",
+        "Composure",
+        "Acrobatics",
+        "Stealth"
     ]
     
     # Talents
@@ -484,23 +484,23 @@ deep sadness."""
     
     char.db.reputation_trait = "The Historian Empress"
     
-    # Skills (Scholar and diplomat more than warrior)
-    char.set_skill("battle", 2)  # Basic self-defense
-    char.set_skill("communicate", 5)  # Master diplomat and teacher
-    char.set_skill("discipline", 4)  # Bene Gesserit training
-    char.set_skill("move", 2)  # Adequate but not exceptional
-    char.set_skill("understand", 5)  # Brilliant scholar and historian
+    # Skills: Primary 6+2=8, Secondary 5+2=7, Tertiary 4+1=5, Others 4, 4 = 28 total
+    char.set_skill("understand", 8)  # Primary: Brilliant scholar and historian
+    char.set_skill("communicate", 7)  # Secondary: Master diplomat and teacher
+    char.set_skill("discipline", 5)  # Tertiary: Bene Gesserit training
+    char.set_skill("battle", 4)  # Basic self-defense
+    char.set_skill("move", 4)  # Adequate
     
     # Focuses
     char.db.stats["focuses"] = [
-        "Communicate: Diplomacy",
-        "Communicate: Teaching",
-        "Communicate: Voice",
-        "Discipline: Bene Gesserit Training",
-        "Understand: History",
-        "Understand: Politics",
-        "Understand: Imperial Protocol",
-        "Understand: Writing"
+        "Diplomacy",
+        "Teaching",
+        "Persuasion",
+        "Composure",
+        "Cultural Studies",
+        "Imperial Politics",
+        "Etiquette",
+        "Linguistics"
     ]
     
     # Talents
@@ -585,23 +585,23 @@ ducal concubine. Her green Atreides eyes miss nothing, and her presence commands
     
     char.db.reputation_trait = "The Reverend Mother of Atreides"
     
-    # Skills (Bene Gesserit master)
-    char.set_skill("battle", 3)  # Bene Gesserit combat training
-    char.set_skill("communicate", 5)  # Master of Voice and manipulation
-    char.set_skill("discipline", 5)  # Reverend Mother mental powers
-    char.set_skill("move", 3)  # Bene Gesserit movement arts
-    char.set_skill("understand", 5)  # Deep wisdom and knowledge
+    # Skills: Primary 6+2=8, Secondary 5+2=7, Tertiary 4+1=5, Others 4, 4 = 28 total
+    char.set_skill("discipline", 8)  # Primary: Reverend Mother mental powers
+    char.set_skill("communicate", 7)  # Secondary: Master of Voice and manipulation
+    char.set_skill("understand", 5)  # Tertiary: Deep wisdom and knowledge
+    char.set_skill("battle", 4)  # Bene Gesserit combat training
+    char.set_skill("move", 4)  # Bene Gesserit movement arts
     
     # Focuses
     char.db.stats["focuses"] = [
-        "Battle: Bene Gesserit Fighting",
-        "Communicate: Voice",
-        "Communicate: Manipulation",
-        "Discipline: Bene Gesserit Training",
-        "Discipline: Truthsaying",
-        "Discipline: Other Memory",
-        "Understand: Politics",
-        "Understand: Bene Gesserit Lore"
+        "Unarmed Combat",
+        "Persuasion",
+        "Deceit",
+        "Composure",
+        "Observe",
+        "Resolve",
+        "Imperial Politics",
+        "Faction Lore/Bene Gesserit"
     ]
     
     # Talents
@@ -687,23 +687,23 @@ He wears traditional Fremen robes and carries himself with the quiet authority o
     
     char.db.reputation_trait = "The Guardian Naib"
     
-    # Skills (Desert warrior)
-    char.set_skill("battle", 5)  # Master Fremen warrior
-    char.set_skill("communicate", 3)  # Blunt but effective leader
-    char.set_skill("discipline", 4)  # Desert-hardened will
-    char.set_skill("move", 4)  # Desert movement master
-    char.set_skill("understand", 3)  # Fremen wisdom
+    # Skills: Primary 6+2=8, Secondary 5+1=6, Tertiary 4+2=6, Others 4, 4 = 28 total
+    char.set_skill("battle", 8)  # Primary: Master Fremen warrior
+    char.set_skill("understand", 6)  # Secondary: Naib wisdom, leadership
+    char.set_skill("discipline", 6)  # Tertiary: Desert-hardened will
+    char.set_skill("move", 4)  # Desert movement
+    char.set_skill("communicate", 4)  # Blunt but effective
     
     # Focuses
     char.db.stats["focuses"] = [
-        "Battle: Crysknife",
-        "Battle: Maula Pistol",
-        "Battle: Desert Warfare",
-        "Communicate: Leadership",
-        "Discipline: Pain Resistance",
-        "Move: Desert Survival",
-        "Move: Sandwalking",
-        "Understand: Fremen Lore"
+        "Short Blades",
+        "Pistols",
+        "Tactics",
+        "Inspiration",
+        "Resolve",
+        "Survival/Desert",
+        "Stealth",
+        "Faction Lore/Fremen"
     ]
     
     # Talents
@@ -789,23 +789,23 @@ a master warrior."""
     
     char.db.reputation_trait = "The Troubadour Warrior"
     
-    # Skills (Master warrior and strategist)
-    char.set_skill("battle", 5)  # Legendary warrior and tactician
-    char.set_skill("communicate", 3)  # Effective but rough-edged
-    char.set_skill("discipline", 4)  # Hardened by decades of war
-    char.set_skill("move", 3)  # Aging but still capable
-    char.set_skill("understand", 3)  # Practical wisdom and tactics
+    # Skills: Primary 6+2=8, Secondary 5+1=6, Tertiary 4+2=6, Others 4, 4 = 28 total
+    char.set_skill("battle", 8)  # Primary: Legendary warrior and tactician
+    char.set_skill("communicate", 6)  # Secondary: Inspiration, leadership
+    char.set_skill("discipline", 6)  # Tertiary: Veteran's mental strength
+    char.set_skill("move", 4)  # Aging but capable
+    char.set_skill("understand", 4)  # Practical wisdom
     
     # Focuses
     char.db.stats["focuses"] = [
-        "Battle: Long Blade",
-        "Battle: Shield Fighting",
-        "Battle: Military Tactics",
-        "Battle: Small Unit Tactics",
-        "Communicate: Inspiration",
-        "Discipline: Pain Resistance",
-        "Understand: Military Strategy",
-        "Understand: Music (baliset)"
+        "Long Blades",
+        "Shield Fighting",
+        "Strategy",
+        "Tactics",
+        "Inspiration",
+        "Resolve",
+        "Imperial Politics",
+        "Music/baliset"
     ]
     
     # Talents
