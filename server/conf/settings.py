@@ -26,8 +26,6 @@ put secret game- or server-specific settings in secret_settings.py.
 
 # Use the defaults from Evennia unless explicitly overridden
 from evennia.settings_default import *
-
-# Import color markups for MUX-style color support
 from evennia.contrib.base_systems import color_markups
 
 ######################################################################
@@ -37,6 +35,19 @@ from evennia.contrib.base_systems import color_markups
 # This is the name of your game. Make it catchy!
 SERVERNAME = "dune"
 
+# Force 80-character width for help files and formatted output
+CLIENT_DEFAULT_WIDTH = 80
+
+# Text formatting settings
+# Enable special character substitutions (%r for newlines, %t for tabs)
+ENABLE_SPECIAL_CHAR_SUBSTITUTIONS = True
+
+# Define custom substitutions (can be extended by admins)
+SPECIAL_CHAR_SUBSTITUTIONS = {
+    '%r%r': '\n\n',  # Paragraph break (must be processed first)
+    '%r': '\n',      # Newline/carriage return
+    '%t': '     ',   # Tab (5 spaces)
+}
 ######################################################################
 # Color Markup Configuration
 ######################################################################
@@ -84,6 +95,8 @@ CLIENT_DEFAULT_HEIGHT = 55  # Default to 45 lines (allows ~40 lines per page aft
 # This will show all help text at once without pagination
 # Set to True to re-enable pagination (useful for very long help files)
 HELP_MORE_ENABLED = False
+MAX_NR_CHARACTERS = 100
+CREATION_THROTTLE_LIMIT = None  # Disable limit (default: 2)
 
 # Note: If you re-enable HELP_MORE_ENABLED, pagination is controlled by Evennia's evmore utility
 # which uses CLIENT_DEFAULT_HEIGHT when clients don't report screen size.
