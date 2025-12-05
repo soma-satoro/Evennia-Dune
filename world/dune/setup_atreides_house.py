@@ -189,22 +189,22 @@ society causes tension between tradition and progress."""
         house.db.enemies = []
     
     # Enemy format: {'house': name, 'hatred': level, 'reason': description}
-    # Hatred levels: "Contempt", "Dislike", "Rivalry", "Hostility", "Feud", "Blood Feud"
+    # Valid hatred levels: "Dislike", "Rival", "Loathing", "Kanly"
     enemies = [
         {
             'house': 'Corrino',
-            'hatred': 'Rivalry',
-            'reason': 'Deposed from Imperial throne by House Atreides'
+            'hatred': 'Rival',
+            'reason': 'Ancient Feud'  # Valid reason from ENEMY_REASONS
         },
         {
             'house': 'Bene Gesserit',
             'hatred': 'Dislike',
-            'reason': 'Complex relationship due to Jessica\'s defiance and Alia\'s condition'
+            'reason': 'Family Ties'  # Valid reason from ENEMY_REASONS
         },
         {
             'house': 'Conservative Houses',
-            'hatred': 'Contempt',
-            'reason': 'Resist Atreides reforms and Fremen integration'
+            'hatred': 'Dislike',
+            'reason': 'Morality'  # Valid reason from ENEMY_REASONS
         }
     ]
     
