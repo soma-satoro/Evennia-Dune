@@ -162,10 +162,19 @@ Then use `@ic <character>` and `+sheet` while puppeting
 @ooc
 ```
 
-### Error: "House Atreides not found"
+### Error: "No House found with the name 'Atreides'"
 Create the house first:
 ```python
 @py from world.dune.setup_atreides_house import setup_house_atreides; setup_house_atreides()
+```
+
+### Error: House exists but displays incorrectly
+If you created "House Atreides" before (with "House" in the name), delete and recreate:
+```python
+@py from evennia import search_object
+@py house = search_object("House Atreides", typeclass="typeclasses.houses.House")[0]
+@py house.delete()
+@py from world.dune.setup_atreides_house import setup_all; setup_all()
 ```
 
 ### Error: "Permission denied"

@@ -23,7 +23,7 @@ def setup_house_atreides():
     print("="*70 + "\n")
     
     # Check if House Atreides already exists
-    house = search_object("House Atreides", typeclass="typeclasses.houses.House")
+    house = search_object("Atreides", typeclass="typeclasses.houses.House")
     
     if house:
         house = house[0]
@@ -32,7 +32,7 @@ def setup_house_atreides():
         # Create new House
         house = create_object(
             "typeclasses.houses.House",
-            key="House Atreides"
+            key="Atreides"
         )
         print("Created new House Atreides.")
     
@@ -178,17 +178,40 @@ society causes tension between tradition and progress."""
     if not hasattr(house.db, 'allies') or house.db.allies is None:
         house.db.allies = []
     
+    # Allies are stored as simple strings
     allies = ["Fremen Tribes", "Spacing Guild (tentative)", "Minor Houses"]
     for ally in allies:
         if ally not in house.db.allies:
             house.db.allies.append(ally)
     
+    # Enemies are stored as dictionaries with 'house', 'hatred', and 'reason' keys
     if not hasattr(house.db, 'enemies') or house.db.enemies is None:
         house.db.enemies = []
     
-    enemies = ["House Corrino (deposed)", "Bene Gesserit (conflicted)", "Conservative Houses"]
+    # Enemy format: {'house': name, 'hatred': level, 'reason': description}
+    # Hatred levels: "Contempt", "Dislike", "Rivalry", "Hostility", "Feud", "Blood Feud"
+    enemies = [
+        {
+            'house': 'Corrino',
+            'hatred': 'Rivalry',
+            'reason': 'Deposed from Imperial throne by House Atreides'
+        },
+        {
+            'house': 'Bene Gesserit',
+            'hatred': 'Dislike',
+            'reason': 'Complex relationship due to Jessica\'s defiance and Alia\'s condition'
+        },
+        {
+            'house': 'Conservative Houses',
+            'hatred': 'Contempt',
+            'reason': 'Resist Atreides reforms and Fremen integration'
+        }
+    ]
+    
+    # Only add enemies that aren't already in the list
+    existing_enemy_names = [e.get('house', '') for e in house.db.enemies if isinstance(e, dict)]
     for enemy in enemies:
-        if enemy not in house.db.enemies:
+        if enemy['house'] not in existing_enemy_names:
             house.db.enemies.append(enemy)
     
     print("\n" + "="*70)
@@ -199,7 +222,7 @@ society causes tension between tradition and progress."""
     print(f"Headquarters: {house.db.headquarters}")
     print(f"Domains: {house.db.domains}")
     print(f"Key Roles: {len(house.db.roles)}")
-    print(f"\nUse +house Atreides to view full house information.")
+    print(f"\nUse '+house Atreides' to view full house information.")
     print("="*70 + "\n")
     
     return house
@@ -272,7 +295,8 @@ def setup_all():
     print("SETUP COMPLETE!")
     print("="*70)
     print("\nNext steps:")
-    print("1. Create roster characters: @py world.dune.roster_characters.create_all_roster()")
+    print("1. Create roster characters:")
+    print("   @py from world.dune.roster_characters import create_all_roster; create_all_roster()")
     print("2. View house: +house Atreides")
     print("3. Teleport characters to throne room if needed")
     print("="*70 + "\n")

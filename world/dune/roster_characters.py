@@ -880,7 +880,10 @@ def create_all_roster():
         print("\nCharacters created:")
         for name in characters.keys():
             print(f"  - {name}")
-        print("\nUse +sheet <character> to view their complete information.")
+        print("\nNext steps:")
+        print("1. View house: +house Atreides")
+        print("2. View character: @ic <character>, then +sheet")
+        print("3. Or use: +roster Atreides")
         print("="*70 + "\n")
         
         return characters
