@@ -15,7 +15,7 @@ This guide will walk you through setting up the Children of Dune era roster char
 If House Atreides doesn't exist yet or needs updating for this era:
 
 ```python
-@py world.dune.setup_atreides_house.setup_all()
+@py from world.dune.setup_atreides_house import setup_all; setup_all()
 ```
 
 This will:
@@ -26,7 +26,7 @@ This will:
 
 **Alternative** (just the house, no locations):
 ```python
-@py world.dune.setup_atreides_house.setup_house_atreides()
+@py from world.dune.setup_atreides_house import setup_house_atreides; setup_house_atreides()
 ```
 
 ### Step 2: Create Roster Characters
@@ -34,7 +34,7 @@ This will:
 Create all 8 major roster characters at once:
 
 ```python
-@py world.dune.roster_characters.create_all_roster()
+@py from world.dune.roster_characters import create_all_roster; create_all_roster()
 ```
 
 This creates:
@@ -116,9 +116,10 @@ If using the roster system, add characters to House Atreides:
 Create one character at a time:
 
 ```python
-@py world.dune.roster_characters.create_character("alia")
-@py world.dune.roster_characters.create_character("duncan")
-@py world.dune.roster_characters.create_character("leto")
+@py from world.dune.roster_characters import create_character
+@py create_character("alia")
+@py create_character("duncan")
+@py create_character("leto")
 ```
 
 Available shortcuts:
@@ -127,14 +128,15 @@ Available shortcuts:
 ### Method C: Direct Function Calls
 
 ```python
-@py world.dune.roster_characters.create_alia()
-@py world.dune.roster_characters.create_leto_ii()
-@py world.dune.roster_characters.create_ghanima()
-@py world.dune.roster_characters.create_duncan_idaho()
-@py world.dune.roster_characters.create_irulan()
-@py world.dune.roster_characters.create_jessica()
-@py world.dune.roster_characters.create_stilgar()
-@py world.dune.roster_characters.create_gurney_halleck()
+@py from world.dune import roster_characters
+@py roster_characters.create_alia()
+@py roster_characters.create_leto_ii()
+@py roster_characters.create_ghanima()
+@py roster_characters.create_duncan_idaho()
+@py roster_characters.create_irulan()
+@py roster_characters.create_jessica()
+@py roster_characters.create_stilgar()
+@py roster_characters.create_gurney_halleck()
 ```
 
 ## Making Characters Playable

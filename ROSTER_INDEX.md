@@ -2,12 +2,19 @@
 
 ## 📚 Documentation Files
 
+### Command Cheatsheet (Use This!)
+**`ROSTER_COMMANDS_CHEATSHEET.md`**
+- Copy-paste ready commands
+- Common issues and solutions
+- Quick reference for all commands
+- **Start here for immediate setup**
+
 ### Quick Start (Read This First!)
 **`ROSTER_SETUP_QUICKSTART.md`**
 - Step-by-step setup instructions
 - Quick commands
 - Troubleshooting
-- **Start here if you want to get going immediately**
+- **Best for guided setup**
 
 ### Overview & Reference
 **`ROSTER_CHARACTERS_README.md`**
@@ -101,8 +108,8 @@ Alternative method for creating characters using Evennia's batch command system.
 ### Complete Setup (One Command)
 ```python
 # Setup everything
-@py world.dune.setup_atreides_house.setup_all()
-@py world.dune.roster_characters.create_all_roster()
+@py from world.dune.setup_atreides_house import setup_all; setup_all()
+@py from world.dune.roster_characters import create_all_roster; create_all_roster()
 ```
 
 ### Verify
@@ -114,14 +121,15 @@ Alternative method for creating characters using Evennia's batch command system.
 
 ### Individual Characters
 ```python
-@py world.dune.roster_characters.create_character("alia")
-@py world.dune.roster_characters.create_character("duncan")
-@py world.dune.roster_characters.create_character("leto")
-@py world.dune.roster_characters.create_character("ghanima")
-@py world.dune.roster_characters.create_character("jessica")
-@py world.dune.roster_characters.create_character("irulan")
-@py world.dune.roster_characters.create_character("stilgar")
-@py world.dune.roster_characters.create_character("gurney")
+@py from world.dune.roster_characters import create_character
+@py create_character("alia")
+@py create_character("duncan")
+@py create_character("leto")
+@py create_character("ghanima")
+@py create_character("jessica")
+@py create_character("irulan")
+@py create_character("stilgar")
+@py create_character("gurney")
 ```
 
 ## 📖 Reading Order
@@ -405,8 +413,8 @@ Gurney Halleck       → Warmaster, Veteran, Troubadour
 
 ```python
 # The full setup in two commands:
-@py world.dune.setup_atreides_house.setup_all()
-@py world.dune.roster_characters.create_all_roster()
+@py from world.dune.setup_atreides_house import setup_all; setup_all()
+@py from world.dune.roster_characters import create_all_roster; create_all_roster()
 
 # Verify it worked:
 +house Atreides

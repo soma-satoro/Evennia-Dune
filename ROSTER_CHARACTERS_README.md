@@ -34,10 +34,10 @@ ROSTER_CHARACTERS_README.md              - This file
 
 ```python
 # 1. Setup House Atreides and initial locations
-@py world.dune.setup_atreides_house.setup_all()
+@py from world.dune.setup_atreides_house import setup_all; setup_all()
 
 # 2. Create all roster characters
-@py world.dune.roster_characters.create_all_roster()
+@py from world.dune.roster_characters import create_all_roster; create_all_roster()
 
 # 3. Verify
 +house Atreides
@@ -49,12 +49,13 @@ ROSTER_CHARACTERS_README.md              - This file
 
 ```python
 # Just the house
-@py world.dune.setup_atreides_house.setup_house_atreides()
+@py from world.dune.setup_atreides_house import setup_house_atreides; setup_house_atreides()
 
 # Individual characters
-@py world.dune.roster_characters.create_character("alia")
-@py world.dune.roster_characters.create_character("duncan")
-@py world.dune.roster_characters.create_character("leto")
+@py from world.dune.roster_characters import create_character
+@py create_character("alia")
+@py create_character("duncan")
+@py create_character("leto")
 ```
 
 ## Character Features
