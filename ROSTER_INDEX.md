@@ -66,19 +66,39 @@
 **`world/dune/setup_atreides_house.py`**
 ```python
 # Complete setup (house + locations)
-@py world.dune.setup_atreides_house.setup_all()
+@py from world.dune.setup_atreides_house import setup_all; setup_all()
 
 # Just house
-@py world.dune.setup_atreides_house.setup_house_atreides()
+@py from world.dune.setup_atreides_house import setup_house_atreides; setup_house_atreides()
 
 # Just throne room
-@py world.dune.setup_atreides_house.setup_arrakis_palace()
+@py from world.dune.setup_atreides_house import setup_arrakis_palace; setup_arrakis_palace()
 ```
 
 **Functions:**
 - `setup_all()` - Complete setup
 - `setup_house_atreides()` - Create/update house
 - `setup_arrakis_palace()` - Create throne room
+
+### Roster Access Setup
+**`world/dune/setup_roster_access.py`** ⭐ NEW
+```python
+# Setup without creating accounts (just fix access)
+@py from world.dune.setup_roster_access import quick_setup_no_accounts; quick_setup_no_accounts()
+
+# Setup WITH accounts for player login
+@py from world.dune.setup_roster_access import quick_setup_with_accounts; quick_setup_with_accounts()
+
+# Move all roster characters to throne room
+@py from world.dune.setup_roster_access import quick_move_to_throne_room; quick_move_to_throne_room()
+```
+
+**Functions:**
+- `quick_setup_no_accounts()` - Fix locks/puppeting (recommended)
+- `quick_setup_with_accounts()` - Create Account objects for player login
+- `quick_move_to_throne_room()` - Move characters for easy +sheet access
+- `setup_character_access()` - Setup individual character
+- `move_rosters_to_location()` - Move to custom location
 
 ## 📜 Batch Commands
 

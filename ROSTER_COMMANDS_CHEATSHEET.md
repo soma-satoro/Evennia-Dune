@@ -2,16 +2,32 @@
 
 ## 🚀 Quick Setup (Copy and Paste)
 
-### Complete Setup - Two Commands
+### Complete Setup - Three Commands
 ```python
 @py from world.dune.setup_atreides_house import setup_all; setup_all()
 @py from world.dune.roster_characters import create_all_roster; create_all_roster()
+@py from world.dune.setup_roster_access import quick_setup_no_accounts; quick_setup_no_accounts()
 ```
 
 ### Verify It Worked
 ```python
 +house Atreides
 +roster Atreides
+@ic Alia Atreides
++sheet
+@ooc
+```
+
+### Alternative: Move Characters to Throne Room
+```python
+@py from world.dune.setup_atreides_house import setup_all; setup_all()
+@py from world.dune.roster_characters import create_all_roster; create_all_roster()
+@py from world.dune.setup_roster_access import quick_move_to_throne_room; quick_move_to_throne_room()
+```
+
+Then:
+```python
+@tel me = Arrakeen Palace - Throne Room
 +sheet Alia Atreides
 ```
 
@@ -117,6 +133,35 @@
 @py from world.dune.roster_characters import create_all_roster; create_all_roster()
 ```
 
+### Error: "Could not find 'Alia Atreides'" or "is not a character"
+This happens because `+sheet` only searches in your current location. **Solutions:**
+
+**Option 1: Move roster characters to throne room (Recommended)**
+```python
+@py from world.dune.setup_roster_access import quick_move_to_throne_room; quick_move_to_throne_room()
+```
+Then go to throne room and use `+sheet <character>`
+
+**Option 2: Set up roster access (for puppeting)**
+```python
+@py from world.dune.setup_roster_access import quick_setup_no_accounts; quick_setup_no_accounts()
+```
+Then use `@ic <character>` and `+sheet` while puppeting
+
+**Option 3: View sheet directly with Python**
+```python
+@py from evennia import search_object
+@py char = search_object('Alia Atreides')[0]
+@py me.msg(char.get_sheet_display())
+```
+
+**Option 4: Puppet the character to view**
+```python
+@ic Alia Atreides
++sheet
+@ooc
+```
+
 ### Error: "House Atreides not found"
 Create the house first:
 ```python
@@ -135,6 +180,26 @@ This is fine! The script will update the existing character instead of creating 
 ---
 
 ## 🛠️ Advanced Usage
+
+### Create Accounts for Roster Characters (Player Login)
+If you want players to log in as roster characters:
+```python
+@py from world.dune.setup_roster_access import quick_setup_with_accounts; quick_setup_with_accounts()
+```
+
+This creates accounts with:
+- Username: Character name (e.g., "Alia Atreides")
+- Password: Character name (CHANGE THIS!)
+
+To change passwords:
+```python
+@password Alia Atreides = <new_secure_password>
+```
+
+Then players can log in with:
+```
+connect Alia Atreides <password>
+```
 
 ### Import and Use Multiple Times
 ```python

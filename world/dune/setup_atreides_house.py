@@ -175,7 +175,7 @@ factions plot to overthrow or manipulate the house. The Fremen integration into 
 society causes tension between tradition and progress."""
     
     # Allies and enemies
-    if not hasattr(house.db, 'allies'):
+    if not hasattr(house.db, 'allies') or house.db.allies is None:
         house.db.allies = []
     
     allies = ["Fremen Tribes", "Spacing Guild (tentative)", "Minor Houses"]
@@ -183,7 +183,7 @@ society causes tension between tradition and progress."""
         if ally not in house.db.allies:
             house.db.allies.append(ally)
     
-    if not hasattr(house.db, 'enemies'):
+    if not hasattr(house.db, 'enemies') or house.db.enemies is None:
         house.db.enemies = []
     
     enemies = ["House Corrino (deposed)", "Bene Gesserit (conflicted)", "Conservative Houses"]
