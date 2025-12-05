@@ -185,34 +185,30 @@ society causes tension between tradition and progress."""
             house.db.allies.append(ally)
     
     # Enemies are stored as dictionaries with 'house', 'hatred', and 'reason' keys
-    if not hasattr(house.db, 'enemies') or house.db.enemies is None:
-        house.db.enemies = []
-    
     # Enemy format: {'house': name, 'hatred': level, 'reason': description}
     # Valid hatred levels: "Dislike", "Rival", "Loathing", "Kanly"
+    # Valid reasons: Competition, Slight, Debt, Ancient Feud, Morality, Servitude, Family Ties, Theft, Jealousy, No Reason
     enemies = [
         {
             'house': 'Corrino',
             'hatred': 'Rival',
-            'reason': 'Ancient Feud'  # Valid reason from ENEMY_REASONS
+            'reason': 'Ancient Feud'
         },
         {
             'house': 'Bene Gesserit',
             'hatred': 'Dislike',
-            'reason': 'Family Ties'  # Valid reason from ENEMY_REASONS
+            'reason': 'Family Ties'
         },
         {
             'house': 'Conservative Houses',
             'hatred': 'Dislike',
-            'reason': 'Morality'  # Valid reason from ENEMY_REASONS
+            'reason': 'Morality'
         }
     ]
     
-    # Only add enemies that aren't already in the list
-    existing_enemy_names = [e.get('house', '') for e in house.db.enemies if isinstance(e, dict)]
-    for enemy in enemies:
-        if enemy['house'] not in existing_enemy_names:
-            house.db.enemies.append(enemy)
+    # Replace enemies list entirely to ensure clean data
+    # This fixes any invalid hatred levels from previous versions
+    house.db.enemies = enemies
     
     print("\n" + "="*70)
     print("HOUSE ATREIDES SETUP COMPLETE")

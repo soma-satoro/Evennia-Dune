@@ -55,24 +55,30 @@ class CmdJobs(MuxCommand):
       +jobs/transfer <#>=<category>  - Move a job to a different category/queue
       +jobs/from <name>              - List all jobs associated with a player (staff only)
       +jobs/clear_archive        - Clear all archived jobs and reset job numbers (Admin only)
+      
+      Architect-Level Commands (Staff only):
+      +jobs/strategic <#>                    - Mark job as strategic (House/Org level)
+      +jobs/conflict <#>=<type>              - Link job to conflict type
+      +jobs/influence <#>=<+/-#>:<target>:<reason> - Track influence changes
+      +jobs/addhouse <#>=<house name>        - Track House involvement
+      +jobs/addorg <#>=<org name>            - Track Organization involvement
+      +jobs/index [category]                 - Index strategic jobs by category
 
     Categories:
-      REQ    - General requests
-      BUG    - Bug reports
-      PLOT   - Plot-related requests
-      BUILD  - Building/room requests
-      MISC   - Miscellaneous requests
-      XP     - XP requests
-      PRP    - PRP requests
-      VAMP   - Vampire requests
-      WERE   - Werewolf requests
-      MORT   - Mortal requests
-      M+     - Mortal+ requests
-      PROM   - Promethean requests
-      GEIST  - Geist requests
-      MUMMY  - Mummy requests
-      DVNT    - Deviant requests
-      CORE   - Core requests
+      REQ      - General requests
+      BUG      - Bug reports
+      PLOT     - Plot-related requests
+      BUILD    - Building/room requests
+      HOUSE    - House management & internal affairs
+      POLITIC  - Political intrigue & diplomacy
+      WAR      - Warfare & military operations
+      SPY      - Espionage & intelligence
+      TRADE    - Trade & economic matters
+      SPICE    - Spice production & distribution
+      TECH     - Technology & science requests
+      RELIGION - Religious matters & orders
+      KANLY    - Formal vendettas & assassinations
+      MISC     - Miscellaneous requests
     """
 
     key = "+jobs"
@@ -157,6 +163,18 @@ class CmdJobs(MuxCommand):
             self.list_jobs_from_player()
         elif "clear_archive" in self.switches:
             self.clear_archive()
+        elif "strategic" in self.switches:
+            self.mark_strategic()
+        elif "conflict" in self.switches:
+            self.link_conflict()
+        elif "influence" in self.switches:
+            self.track_influence()
+        elif "index" in self.switches:
+            self.index_strategic_jobs()
+        elif "addhouse" in self.switches:
+            self.add_house_to_job()
+        elif "addorg" in self.switches:
+            self.add_org_to_job()
         else:
             self.caller.msg("Invalid switch. See help +jobs for usage.")
 
@@ -205,12 +223,24 @@ class CmdJobs(MuxCommand):
             
             # Check if job has been viewed by this user
             unread = job.is_updated_since_last_view(self.caller.account)
-            title_marker = "|r*|n " if unread else "  "
+            # Check if job is strategic
+            is_strategic = hasattr(job.db, 'strategic') and job.db.strategic
+            
+            # Build title marker
+            title_marker = ""
+            if unread:
+                title_marker += "|r*|n"
+            if is_strategic:
+                title_marker += "|yS|n"
+            if not title_marker:
+                title_marker = "  "
+            else:
+                title_marker += " "
             
             # Format each field with proper width
             job_id = str(job.id).ljust(col_widths['job_id'])
             queue = crop(job.queue.name, width=col_widths['queue']-2).ljust(col_widths['queue'])  # -2 for spacing
-            title = title_marker + crop(job.title, width=col_widths['title']-2)  # -2 for marker
+            title = title_marker + crop(job.title, width=col_widths['title']-3)  # -3 for markers
             title = title.ljust(col_widths['title'])
             originator = crop(originator, width=col_widths['originator']-2).ljust(col_widths['originator'])
             assignee = crop(assignee, width=col_widths['assignee']-2).ljust(col_widths['assignee'])
@@ -221,6 +251,7 @@ class CmdJobs(MuxCommand):
             output += row + "\n"
 
         output += footer(width=78, color="|r")
+        output += "\n|xLegend: |r*|n = Unread  |yS|n = Strategic|n\n"
         self.caller.msg(output)
 
     def view_job(self):
@@ -243,6 +274,44 @@ class CmdJobs(MuxCommand):
             output += f"|cQueue:|n {job.queue.name}\n"
             output += f"|cCreated At:|n {job.created_at.strftime('%Y-%m-%d %H:%M:%S')}\n"
             output += f"|cClosed At:|n {job.closed_at.strftime('%Y-%m-%d %H:%M:%S') if job.closed_at else '-----'}\n"
+            
+            # Display strategic information if applicable
+            if hasattr(job.db, 'strategic') and job.db.strategic:
+                output += "\n|y" + "STRATEGIC JOB".center(78, "=") + "|n\n"
+                strategic_data = job.db.strategic_data
+                
+                if strategic_data.get('conflict_type'):
+                    output += f"|cConflict Type:|n {strategic_data['conflict_type'].upper()}\n"
+                
+                # Show houses involved
+                houses_involved = strategic_data.get('houses_involved', [])
+                if houses_involved:
+                    output += f"|cHouses Involved:|n {', '.join(houses_involved)}\n"
+                
+                # Show organizations involved
+                orgs_involved = strategic_data.get('organizations_involved', [])
+                if orgs_involved:
+                    output += f"|cOrganizations Involved:|n {', '.join(orgs_involved)}\n"
+                
+                if strategic_data.get('influence_changes'):
+                    output += f"|cInfluence Changes:|n {len(strategic_data['influence_changes'])} tracked\n"
+                    
+                    # Calculate and display influence summary
+                    influence_by_target = {}
+                    for change in strategic_data['influence_changes']:
+                        target = change['target']
+                        amount = change['amount']
+                        if target not in influence_by_target:
+                            influence_by_target[target] = 0
+                        influence_by_target[target] += amount
+                    
+                    if influence_by_target:
+                        output += "|cInfluence Summary:|n\n"
+                        for target, total in influence_by_target.items():
+                            sign = "+" if total >= 0 else ""
+                            output += f"  {target}: {sign}{total}\n"
+                
+                output += "|y" + "="*78 + "|n\n"
             
             # Add participants list including requester
             participants = list(job.participants.all())
@@ -285,7 +354,7 @@ class CmdJobs(MuxCommand):
 
     def determine_category(self, specified_category=None):
         """
-        Determine the job category based on character splat or specified category.
+        Determine the job category based on character House affiliation or specified category.
         
         Args:
             specified_category (str, optional): Category explicitly specified by the user
@@ -297,47 +366,32 @@ class CmdJobs(MuxCommand):
         if specified_category:
             return specified_category  # Return as-is, case conversion happens later
 
-        # For non-staff, determine category based on splat
+        # For non-staff, determine category based on House affiliation and context
         if not self.caller.check_permstring("Admin"):
-            stats = self.caller.db.stats
-            if stats and 'other' in stats and 'splat' in stats['other']:
-                splat = stats['other']['splat'].get('Splat', {}).get('perm', '')
-                
-                # Map splat to category
-                splat_category_map = {
-                    'Promethean': 'PROM',
-                    'Vampire': 'VAMP',
-                    'Werewolf': 'WERE',
-                    'Mortal': 'MORT',
-                    'Mage': 'MAGE',
-                    'Mortal+': 'M+',
-                    'Deviant': 'DVNT',
-                    'Core': 'CORE',
-                    'Geist': 'GEIST',
-                    'Mummy': 'MUMMY',
-                    'Demon': 'DEMON',
-                    'Hunter': 'HUNT',
-                    'Changeling': 'LING',
-                }
-                
-                # Handle Mortal+ subtypes
-                if splat == 'Mortal+':
-                    if 'identity' in stats and 'lineage' in stats['identity']:
-                        mortal_type = stats['identity']['lineage'].get('Type', {}).get('perm', '')
-                        mortal_plus_map = {
-                            'Fae-Touched': 'LING',
-                            'Ghoul': 'VAMP',
-                            'Wolf-Blooded': 'WERE',
-                            'Sleepwalker': 'MAGE',
-                            'Immortal': 'MUMMY',
-                            'Demon-Blooded': 'DEMON',
-                            'Stigmatic': 'DEMON',
-                        }
-                        return mortal_plus_map.get(mortal_type, 'M+')
-                else:
-                    category = splat_category_map.get(splat)
-                    if category:
-                        return category
+            # Check if character is affiliated with a House
+            if hasattr(self.caller, 'db') and hasattr(self.caller.db, 'house'):
+                house_affiliation = self.caller.db.house
+                if house_affiliation:
+                    # If they have a House, default to HOUSE category
+                    return "HOUSE"
+            
+            # Check if character is affiliated with an Organization
+            if hasattr(self.caller, 'db') and hasattr(self.caller.db, 'organizations'):
+                organizations = self.caller.db.organizations
+                if organizations:
+                    # Check for specific organization types that might suggest a category
+                    for org in organizations:
+                        # Try to get the organization object
+                        from evennia.utils.search import search_object_by_tag
+                        org_obj = search_object_by_tag(org, category="organization")
+                        if org_obj:
+                            org_type = org_obj[0].db.org_type if hasattr(org_obj[0].db, 'org_type') else None
+                            if org_type == "guild":
+                                return "TRADE"
+                            elif org_type == "order":
+                                return "RELIGION"
+                            elif org_type == "school":
+                                return "TECH"
 
         # Default category if nothing else matched
         return "REQ"
@@ -450,10 +504,9 @@ class CmdJobs(MuxCommand):
         category = self.determine_category(specified_category).upper()
 
         # Validate category - make case-insensitive comparison
-        valid_categories = ["REQ", "BUG", "PLOT", "BUILD", "MISC", "XP", 
-                          "PRP", "VAMP", "WERE", "MORT", "M+", "PROM", "GEIST", 
-                          "MUMMY", "DVNT", "CORE", "DEMON", "HUNT", "LING", 
-                          "MAGE"]
+        valid_categories = ["REQ", "BUG", "PLOT", "BUILD", "HOUSE", "POLITIC", 
+                          "WAR", "SPY", "TRADE", "SPICE", "TECH", "RELIGION", 
+                          "KANLY", "MISC"]
         
         if category not in valid_categories:
             self.caller.msg(f"Invalid category. Valid categories are: {', '.join(valid_categories)}")
@@ -2121,10 +2174,9 @@ class CmdJobs(MuxCommand):
         new_category = new_category.strip().upper()  # Convert to uppercase for consistency
         
         # Validate category - make case-insensitive comparison
-        valid_categories = ["REQ", "BUG", "PLOT", "BUILD", "MISC", "XP", 
-                          "PRP", "VAMP", "WERE", "MORT", "M+", "PROM", "GEIST", 
-                          "MUMMY", "DVNT", "CORE", "DEMON", "HUNT", "LING", 
-                          "MAGE"]
+        valid_categories = ["REQ", "BUG", "PLOT", "BUILD", "HOUSE", "POLITIC", 
+                          "WAR", "SPY", "TRADE", "SPICE", "TECH", "RELIGION", 
+                          "KANLY", "MISC"]
         
         if new_category not in valid_categories:
             self.caller.msg(f"Invalid category. Valid categories are: {', '.join(valid_categories)}")
@@ -2402,6 +2454,421 @@ class CmdJobs(MuxCommand):
         except Exception as e:
             logger.log_err(f"Error parsing equipment request: {str(e)}")
             return None
+
+    def mark_strategic(self):
+        """Mark a job as strategic (architect-level play)."""
+        if not self.caller.check_permstring("Admin"):
+            self.caller.msg("You don't have permission to mark jobs as strategic.")
+            return
+        
+        if not self.args:
+            self.caller.msg("Usage: +jobs/strategic <#>")
+            return
+        
+        try:
+            job_id = int(self.args.strip())
+            job = Job.objects.get(id=job_id)
+            
+            # Toggle strategic status
+            if not hasattr(job.db, 'strategic') or not job.db.strategic:
+                job.db.strategic = True
+                job.db.strategic_data = {
+                    'marked_by': self.caller.account.username,
+                    'marked_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'influence_changes': [],
+                    'conflict_type': None,
+                    'houses_involved': [],
+                    'organizations_involved': []
+                }
+                job.save()
+                
+                # Add a system comment
+                job.comments.append({
+                    'author': 'System',
+                    'text': f"Marked as STRATEGIC by {self.caller.name}",
+                    'created_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+                })
+                job.save()
+                
+                self.caller.msg(f"|gJob #{job_id} marked as STRATEGIC.|n")
+                self.post_to_jobs_channel(self.caller.name, job.id, "marked as strategic")
+            else:
+                job.db.strategic = False
+                job.save()
+                
+                # Add a system comment
+                job.comments.append({
+                    'author': 'System',
+                    'text': f"STRATEGIC status removed by {self.caller.name}",
+                    'created_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+                })
+                job.save()
+                
+                self.caller.msg(f"|yJob #{job_id} no longer marked as strategic.|n")
+                self.post_to_jobs_channel(self.caller.name, job.id, "removed strategic status")
+                
+        except ValueError:
+            self.caller.msg("Invalid job ID.")
+        except Job.DoesNotExist:
+            self.caller.msg(f"Job #{job_id} not found.")
+        except Exception as e:
+            self.caller.msg(f"Error marking job as strategic: {str(e)}")
+            logger.log_err(f"Error in mark_strategic: {str(e)}")
+    
+    def link_conflict(self):
+        """Link a job to a conflict type (warfare/espionage)."""
+        if not self.caller.check_permstring("Admin"):
+            self.caller.msg("You don't have permission to link conflicts.")
+            return
+        
+        if not self.args or "=" not in self.args:
+            self.caller.msg("Usage: +jobs/conflict <#>=<warfare|espionage|kanly|political>")
+            return
+        
+        try:
+            job_id, conflict_type = self.args.split("=", 1)
+            job_id = int(job_id.strip())
+            conflict_type = conflict_type.strip().lower()
+            
+            valid_conflict_types = ["warfare", "espionage", "kanly", "political", "trade", "religious"]
+            if conflict_type not in valid_conflict_types:
+                self.caller.msg(f"Invalid conflict type. Valid types: {', '.join(valid_conflict_types)}")
+                return
+            
+            job = Job.objects.get(id=job_id)
+            
+            # Ensure job is marked as strategic
+            if not hasattr(job.db, 'strategic') or not job.db.strategic:
+                self.caller.msg("|yJob is not marked as strategic. Marking it now...|n")
+                job.db.strategic = True
+                job.db.strategic_data = {
+                    'marked_by': self.caller.account.username,
+                    'marked_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'influence_changes': [],
+                    'conflict_type': None,
+                    'houses_involved': [],
+                    'organizations_involved': []
+                }
+            
+            # Set conflict type
+            job.db.strategic_data['conflict_type'] = conflict_type
+            job.save()
+            
+            # Add a system comment
+            job.comments.append({
+                'author': 'System',
+                'text': f"Linked to {conflict_type.upper()} conflict by {self.caller.name}",
+                'created_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+            job.save()
+            
+            self.caller.msg(f"|gJob #{job_id} linked to {conflict_type.upper()} conflict.|n")
+            self.post_to_jobs_channel(self.caller.name, job.id, f"linked to {conflict_type} conflict")
+            
+        except ValueError:
+            self.caller.msg("Invalid job ID.")
+        except Job.DoesNotExist:
+            self.caller.msg(f"Job #{job_id} not found.")
+        except Exception as e:
+            self.caller.msg(f"Error linking conflict: {str(e)}")
+            logger.log_err(f"Error in link_conflict: {str(e)}")
+    
+    def track_influence(self):
+        """Track influence changes on a strategic job."""
+        if not self.caller.check_permstring("Admin"):
+            self.caller.msg("You don't have permission to track influence.")
+            return
+        
+        if not self.args or "=" not in self.args:
+            self.caller.msg("Usage: +jobs/influence <#>=<+/-amount>:<target>:<reason>")
+            self.caller.msg("Example: +jobs/influence 5=+3:House Atreides:Successful diplomatic mission")
+            return
+        
+        try:
+            job_id, influence_data = self.args.split("=", 1)
+            job_id = int(job_id.strip())
+            
+            # Parse influence data
+            parts = influence_data.split(":", 2)
+            if len(parts) < 3:
+                self.caller.msg("Usage: +jobs/influence <#>=<+/-amount>:<target>:<reason>")
+                return
+            
+            amount_str = parts[0].strip()
+            target = parts[1].strip()
+            reason = parts[2].strip()
+            
+            # Parse amount (should be +X or -X)
+            if not (amount_str.startswith('+') or amount_str.startswith('-')):
+                self.caller.msg("Amount must start with + or - (e.g., +3 or -2)")
+                return
+            
+            amount = int(amount_str)
+            
+            job = Job.objects.get(id=job_id)
+            
+            # Ensure job is marked as strategic
+            if not hasattr(job.db, 'strategic') or not job.db.strategic:
+                self.caller.msg("|yJob is not marked as strategic. Marking it now...|n")
+                job.db.strategic = True
+                job.db.strategic_data = {
+                    'marked_by': self.caller.account.username,
+                    'marked_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'influence_changes': [],
+                    'conflict_type': None,
+                    'houses_involved': [],
+                    'organizations_involved': []
+                }
+            
+            # Add influence change
+            influence_change = {
+                'amount': amount,
+                'target': target,
+                'reason': reason,
+                'tracked_by': self.caller.account.username,
+                'tracked_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+            if 'influence_changes' not in job.db.strategic_data:
+                job.db.strategic_data['influence_changes'] = []
+            
+            job.db.strategic_data['influence_changes'].append(influence_change)
+            job.save()
+            
+            # Add a system comment
+            sign = "+" if amount >= 0 else ""
+            job.comments.append({
+                'author': 'System',
+                'text': f"INFLUENCE: {sign}{amount} with {target} - {reason} (tracked by {self.caller.name})",
+                'created_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+            job.save()
+            
+            self.caller.msg(f"|gTracked influence change: {sign}{amount} with {target}|n")
+            self.post_to_jobs_channel(self.caller.name, job.id, f"tracked influence change ({sign}{amount} {target})")
+            
+        except ValueError as e:
+            self.caller.msg(f"Invalid input: {str(e)}")
+        except Job.DoesNotExist:
+            self.caller.msg(f"Job #{job_id} not found.")
+        except Exception as e:
+            self.caller.msg(f"Error tracking influence: {str(e)}")
+            logger.log_err(f"Error in track_influence: {str(e)}")
+    
+    def index_strategic_jobs(self):
+        """Display strategic jobs indexed by category."""
+        if not self.caller.check_permstring("Admin"):
+            self.caller.msg("You don't have permission to view strategic job index.")
+            return
+        
+        # Get category filter if provided
+        category_filter = self.args.strip().upper() if self.args else None
+        
+        # Get all strategic jobs
+        all_jobs = Job.objects.filter(status__in=['open', 'claimed']).order_by('-created_at')
+        strategic_jobs = []
+        
+        for job in all_jobs:
+            if hasattr(job.db, 'strategic') and job.db.strategic:
+                # Apply category filter if specified
+                if category_filter and job.queue.name != category_filter:
+                    continue
+                strategic_jobs.append(job)
+        
+        if not strategic_jobs:
+            if category_filter:
+                self.caller.msg(f"No strategic jobs found in category {category_filter}.")
+            else:
+                self.caller.msg("No strategic jobs found.")
+            return
+        
+        # Group by category
+        jobs_by_category = {}
+        for job in strategic_jobs:
+            category = job.queue.name
+            if category not in jobs_by_category:
+                jobs_by_category[category] = []
+            jobs_by_category[category].append(job)
+        
+        # Build output
+        output = header("Strategic Jobs Index", width=78, color="|r") + "\n"
+        
+        if category_filter:
+            output += f"|cFiltered by: {category_filter}|n\n\n"
+        
+        for category in sorted(jobs_by_category.keys()):
+            jobs = jobs_by_category[category]
+            output += f"|y{category}|n ({len(jobs)} job{'s' if len(jobs) != 1 else ''})\n"
+            output += "|r" + "-" * 78 + "|n\n"
+            
+            for job in jobs:
+                conflict_type = "N/A"
+                influence_count = 0
+                
+                if hasattr(job.db, 'strategic_data') and job.db.strategic_data:
+                    conflict_type = job.db.strategic_data.get('conflict_type', 'N/A')
+                    if conflict_type:
+                        conflict_type = conflict_type.upper()
+                    influence_changes = job.db.strategic_data.get('influence_changes', [])
+                    influence_count = len(influence_changes)
+                
+                assignee = job.assignee.username if job.assignee else "Unassigned"
+                
+                output += f"  |c#{job.id}|n - {crop(job.title, width=30)}\n"
+                output += f"    Conflict: {conflict_type} | Influence Tracked: {influence_count} | Assignee: {assignee}\n"
+                
+                # Show influence summary if any
+                if influence_count > 0:
+                    # Calculate total influence by target
+                    influence_by_target = {}
+                    for change in job.db.strategic_data.get('influence_changes', []):
+                        target = change['target']
+                        amount = change['amount']
+                        if target not in influence_by_target:
+                            influence_by_target[target] = 0
+                        influence_by_target[target] += amount
+                    
+                    output += "    Influence Summary: "
+                    summaries = []
+                    for target, total in influence_by_target.items():
+                        sign = "+" if total >= 0 else ""
+                        summaries.append(f"{target} ({sign}{total})")
+                    output += ", ".join(summaries) + "\n"
+                
+                output += "\n"
+        
+        output += footer(width=78, color="|r")
+        self.caller.msg(output)
+    
+    def add_house_to_job(self):
+        """Add a House to a strategic job's tracking."""
+        if not self.caller.check_permstring("Admin"):
+            self.caller.msg("You don't have permission to add Houses to jobs.")
+            return
+        
+        if not self.args or "=" not in self.args:
+            self.caller.msg("Usage: +jobs/addhouse <#>=<house name>")
+            return
+        
+        try:
+            job_id, house_name = self.args.split("=", 1)
+            job_id = int(job_id.strip())
+            house_name = house_name.strip()
+            
+            job = Job.objects.get(id=job_id)
+            
+            # Ensure job is marked as strategic
+            if not hasattr(job.db, 'strategic') or not job.db.strategic:
+                self.caller.msg("|yJob is not marked as strategic. Marking it now...|n")
+                job.db.strategic = True
+                job.db.strategic_data = {
+                    'marked_by': self.caller.account.username,
+                    'marked_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'influence_changes': [],
+                    'conflict_type': None,
+                    'houses_involved': [],
+                    'organizations_involved': []
+                }
+            
+            # Verify house exists
+            from evennia.utils.search import search_object_by_tag
+            house_obj = search_object_by_tag(house_name, category="house")
+            if not house_obj:
+                self.caller.msg(f"House '{house_name}' not found. Adding anyway as it may be a remote House.")
+            
+            # Add house to tracking
+            if 'houses_involved' not in job.db.strategic_data:
+                job.db.strategic_data['houses_involved'] = []
+            
+            if house_name not in job.db.strategic_data['houses_involved']:
+                job.db.strategic_data['houses_involved'].append(house_name)
+                job.save()
+                
+                # Add a system comment
+                job.comments.append({
+                    'author': 'System',
+                    'text': f"House {house_name} added to strategic tracking by {self.caller.name}",
+                    'created_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+                })
+                job.save()
+                
+                self.caller.msg(f"|gHouse {house_name} added to job #{job_id} strategic tracking.|n")
+                self.post_to_jobs_channel(self.caller.name, job.id, f"added House {house_name} to tracking")
+            else:
+                self.caller.msg(f"House {house_name} is already tracked on this job.")
+                
+        except ValueError:
+            self.caller.msg("Invalid job ID.")
+        except Job.DoesNotExist:
+            self.caller.msg(f"Job #{job_id} not found.")
+        except Exception as e:
+            self.caller.msg(f"Error adding house to job: {str(e)}")
+            logger.log_err(f"Error in add_house_to_job: {str(e)}")
+    
+    def add_org_to_job(self):
+        """Add an Organization to a strategic job's tracking."""
+        if not self.caller.check_permstring("Admin"):
+            self.caller.msg("You don't have permission to add organizations to jobs.")
+            return
+        
+        if not self.args or "=" not in self.args:
+            self.caller.msg("Usage: +jobs/addorg <#>=<organization name>")
+            return
+        
+        try:
+            job_id, org_name = self.args.split("=", 1)
+            job_id = int(job_id.strip())
+            org_name = org_name.strip()
+            
+            job = Job.objects.get(id=job_id)
+            
+            # Ensure job is marked as strategic
+            if not hasattr(job.db, 'strategic') or not job.db.strategic:
+                self.caller.msg("|yJob is not marked as strategic. Marking it now...|n")
+                job.db.strategic = True
+                job.db.strategic_data = {
+                    'marked_by': self.caller.account.username,
+                    'marked_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'influence_changes': [],
+                    'conflict_type': None,
+                    'houses_involved': [],
+                    'organizations_involved': []
+                }
+            
+            # Verify organization exists
+            from evennia.utils.search import search_object_by_tag
+            org_obj = search_object_by_tag(org_name, category="organization")
+            if not org_obj:
+                self.caller.msg(f"Organization '{org_name}' not found. Adding anyway as it may be a remote organization.")
+            
+            # Add organization to tracking
+            if 'organizations_involved' not in job.db.strategic_data:
+                job.db.strategic_data['organizations_involved'] = []
+            
+            if org_name not in job.db.strategic_data['organizations_involved']:
+                job.db.strategic_data['organizations_involved'].append(org_name)
+                job.save()
+                
+                # Add a system comment
+                job.comments.append({
+                    'author': 'System',
+                    'text': f"Organization {org_name} added to strategic tracking by {self.caller.name}",
+                    'created_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+                })
+                job.save()
+                
+                self.caller.msg(f"|gOrganization {org_name} added to job #{job_id} strategic tracking.|n")
+                self.post_to_jobs_channel(self.caller.name, job.id, f"added Organization {org_name} to tracking")
+            else:
+                self.caller.msg(f"Organization {org_name} is already tracked on this job.")
+                
+        except ValueError:
+            self.caller.msg("Invalid job ID.")
+        except Job.DoesNotExist:
+            self.caller.msg(f"Job #{job_id} not found.")
+        except Exception as e:
+            self.caller.msg(f"Error adding organization to job: {str(e)}")
+            logger.log_err(f"Error in add_org_to_job: {str(e)}")
 
     def send_mail_to_multiple_participants(self, job, message, exclude_accounts=None):
         """Send a mail notification to participants, excluding specified accounts."""
