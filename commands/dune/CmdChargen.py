@@ -1009,53 +1009,6 @@ class CmdChargen(MuxCommand):
         self.caller.msg("\n|w" + "=" * 80 + "|n")
         self.caller.msg(f"|cUse |w+chargen/talents add {talent_name}|c to select this talent.|n")
         self.caller.msg("|w" + "=" * 80 + "|n")
-        
-        # Parse arguments
-        parts = self.args.split(None, 1)
-        if len(parts) < 2:
-            self.caller.msg("|rUsage: +chargen/talents add <talent> OR +chargen/talents remove <talent>|n")
-            return
-        
-        action = parts[0].lower()
-        talent_name = parts[1].strip()
-        
-        if action == "add":
-            if len(current_talents) >= 3:
-                self.caller.msg("|rYou already have 3 talents. Remove one first if you want to change.|n")
-                return
-            
-            if talent_name in current_talents:
-                self.caller.msg(f"|rYou already have the talent '{talent_name}'.|n")
-                return
-            
-            self.caller.add_talent(talent_name)
-            self.caller.msg(f"|gAdded talent: {talent_name}|n")
-            
-            # Check if faction requirements are now met
-            faction = self.caller.db.faction
-            if faction:
-                talent_valid, talent_msg, _ = validate_faction_talents(self.caller, faction)
-                if talent_valid:
-                    self.caller.msg(f"|g✓ Faction requirements now met: {talent_msg}|n")
-                else:
-                    self.caller.msg(f"|yNote:|n {talent_msg}|n")
-            
-            remaining = 3 - len(self.caller.db.stats.get("talents", []))
-            if remaining > 0:
-                self.caller.msg(f"|yTalents remaining:|n {remaining}")
-            else:
-                self.caller.msg("|yAll talents assigned!|n")
-                self.caller.msg("\n|cNext: Use |w+chargen/drives|c to set drives.|n")
-                
-        elif action == "remove":
-            if talent_name not in current_talents:
-                self.caller.msg(f"|rTalent '{talent_name}' not found.|n")
-                return
-            
-            self.caller.remove_talent(talent_name)
-            self.caller.msg(f"|gRemoved talent: {talent_name}|n")
-        else:
-            self.caller.msg("|rAction must be 'add' or 'remove'.|n")
     
     def _setup_drives(self):
         """Handle drive assignment."""

@@ -264,3 +264,5 @@ With the corrected skill values shown above.
 
 **All characters now follow proper character creation rules with 28 total skill points!**
 
+
+
